@@ -1,5 +1,5 @@
-import React, { ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { ReactNode, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Clock, 
   LayoutDashboard, 
@@ -24,16 +24,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-
-// Navigation items
-const navItems = [
-  { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { path: '/time-tracker', icon: Clock, label: 'Time Tracker' },
-  { path: '/approvals', icon: ClipboardCheck, label: 'Approvals' },
-  { path: '/team', icon: Users, label: 'Team' },
-  { path: '/reports', icon: BarChart4, label: 'Reports' },
-  { path: '/settings', icon: Settings, label: 'Settings' },
-];
+import { useAuth } from '@/lib/auth';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -43,21 +35,31 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const location = useLocation();
   const { toast } = useToast();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { user, profile, isLoading } = useAuth();
+  const navigate = useNavigate();
 
-  // Current user mock data
-  const currentUser = {
-    name: 'Alex Johnson',
-    avatar: '',
-    role: 'Project Manager',
-    initials: 'AJ'
-  };
+  useEffect(() => {
+    if (!isLoading && !user) {
+      navigate('/auth');
+    }
+  }, [user, isLoading, navigate]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     toast({
       title: "Logged out successfully",
       description: "You have been logged out of your account",
     });
+    navigate('/auth');
   };
+
+  if (isLoading) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
+
+  if (!user || !profile) {
+    return null;
+  }
 
   return (
     <div className="flex h-screen bg-background">
@@ -132,15 +134,15 @@ const MainLayout = ({ children }: MainLayoutProps) => {
                 )}
               >
                 <Avatar className="h-8 w-8 border border-sidebar-border">
-                  <AvatarImage src={currentUser.avatar} />
+                  <AvatarImage src="" />
                   <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground">
-                    {currentUser.initials}
+                    {profile.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
                   </AvatarFallback>
                 </Avatar>
                 {!sidebarCollapsed && (
                   <div className="flex-1 overflow-hidden">
-                    <p className="text-sm font-medium truncate">{currentUser.name}</p>
-                    <p className="text-xs text-sidebar-foreground/70 truncate">{currentUser.role}</p>
+                    <p className="text-sm font-medium truncate">{profile.full_name || 'User'}</p>
+                    <p className="text-xs text-sidebar-foreground/70 truncate capitalize">{profile.role}</p>
                   </div>
                 )}
               </Button>
