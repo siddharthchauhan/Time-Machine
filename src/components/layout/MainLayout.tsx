@@ -1,3 +1,4 @@
+
 import React, { ReactNode, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -26,6 +27,40 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
+
+// Define the navigation items array
+const navItems = [
+  {
+    path: '/',
+    label: 'Dashboard',
+    icon: LayoutDashboard
+  },
+  {
+    path: '/time-tracker',
+    label: 'Time Tracker',
+    icon: Clock
+  },
+  {
+    path: '/approvals',
+    label: 'Approvals',
+    icon: ClipboardCheck
+  },
+  {
+    path: '/team',
+    label: 'Team',
+    icon: Users
+  },
+  {
+    path: '/reports',
+    label: 'Reports',
+    icon: BarChart4
+  },
+  {
+    path: '/settings',
+    label: 'Settings',
+    icon: Settings
+  }
+];
 
 interface MainLayoutProps {
   children: ReactNode;
