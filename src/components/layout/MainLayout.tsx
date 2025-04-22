@@ -27,6 +27,7 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Define the navigation items array
 const navItems = [
@@ -73,28 +74,73 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const { user, profile, isLoading } = useAuth();
   const navigate = useNavigate();
 
+  console.log('MainLayout: Rendering with state', { 
+    isLoading, 
+    hasUser: !!user, 
+    hasProfile: !!profile,
+    currentLocation: location.pathname 
+  });
+
   useEffect(() => {
+    console.log('MainLayout: useEffect auth check', { isLoading, hasUser: !!user });
+    
     if (!isLoading && !user) {
+      console.log('MainLayout: No user detected, redirecting to auth');
       navigate('/auth');
     }
   }, [user, isLoading, navigate]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast({
-      title: "Logged out successfully",
-      description: "You have been logged out of your account",
-    });
-    navigate('/auth');
+    console.log('MainLayout: Logging out');
+    
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account",
+      });
+      navigate('/auth');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      toast({
+        title: "Error logging out",
+        description: "There was a problem logging out. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   if (isLoading) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+    console.log('MainLayout: Showing loading state');
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="w-full max-w-md space-y-6 p-6">
+          <div className="space-y-2 text-center">
+            <Skeleton className="mx-auto h-12 w-12 rounded-full" />
+            <Skeleton className="mx-auto h-6 w-48" />
+            <Skeleton className="mx-auto h-4 w-36" />
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!user || !profile) {
+    console.log('MainLayout: No user or profile, redirecting to auth');
+    navigate('/auth');
     return null;
   }
+
+  console.log('MainLayout: Rendering content for authenticated user');
 
   return (
     <div className="flex h-screen bg-background">
