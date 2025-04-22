@@ -1,11 +1,10 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Clock, Play, Calendar as CalendarIcon, Stop } from "lucide-react";
+import { Clock, Play, CalendarIcon, CircleStop } from "lucide-react";
 import { useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -69,25 +68,21 @@ const TimeEntryForm = () => {
     setTrackingStartTime(new Date());
     setIsTracking(true);
     
-    // Start the timer
     const intervalId = setInterval(() => {
       setTrackingDuration(prev => prev + 1);
     }, 1000);
     
-    // Store the interval ID in a data attribute to access it later
     document.documentElement.setAttribute('data-timer-id', intervalId.toString());
   };
 
   const handleStopTracking = () => {
     setIsTracking(false);
     
-    // Clear the interval
     const intervalId = document.documentElement.getAttribute('data-timer-id');
     if (intervalId) {
       clearInterval(parseInt(intervalId));
     }
     
-    // Calculate the duration in hours
     const hours = trackingDuration / 3600;
     setManualHours(hours.toFixed(2));
     
@@ -109,7 +104,6 @@ const TimeEntryForm = () => {
       return;
     }
     
-    // If tracking is in progress, stop it
     if (isTracking) {
       handleStopTracking();
     }
@@ -119,7 +113,6 @@ const TimeEntryForm = () => {
       description: "Your time entry has been submitted successfully",
     });
     
-    // Reset form
     setSelectedProject('');
     setSelectedTask('');
     setDescription('');
@@ -230,7 +223,7 @@ const TimeEntryForm = () => {
                 >
                   {isTracking ? (
                     <>
-                      <Stop className="mr-2 h-4 w-4" />
+                      <CircleStop className="mr-2 h-4 w-4" />
                       Stop
                     </>
                   ) : (
