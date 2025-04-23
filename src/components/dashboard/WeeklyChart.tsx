@@ -69,8 +69,8 @@ const WeeklyChart = () => {
                 labelFormatter={(label) => `${label}`}
               />
               <Legend />
-              <Bar dataKey="billable" stackId="a" fill="#008ca1" name="Billable Hours" />
-              <Bar dataKey="nonBillable" stackId="a" fill="#99d1d9" name="Non-Billable" />
+              <Bar dataKey="billable" stackId="a" fill="#000000" name="Billable Hours" />
+              <Bar dataKey="nonBillable" stackId="a" fill="#888888" name="Non-Billable" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -80,3 +80,4 @@ const WeeklyChart = () => {
 };
 
 export default WeeklyChart;
+
