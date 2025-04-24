@@ -23,9 +23,9 @@ const timeData = [
 ];
 
 const projectData = [
-  { name: 'Website Redesign', hours: 18, color: '#008ca1' },
-  { name: 'Mobile App', hours: 12, color: '#ff9800' },
-  { name: 'CRM Integration', hours: 7, color: '#00cd42' },
+  { name: 'Website Redesign', hours: 18, color: '#000000' },
+  { name: 'Mobile App', hours: 12, color: '#333333' },
+  { name: 'CRM Integration', hours: 7, color: '#888888' },
 ];
 
 const Reports = () => {
@@ -124,14 +124,14 @@ const Reports = () => {
                         bottom: 5,
                       }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#888888" />
                       <XAxis dataKey="name" />
                       <YAxis />
                       <Tooltip 
                         formatter={(value) => [`${value} hours`, undefined]}
                         labelFormatter={(label) => `${label}`}
                       />
-                      <Bar dataKey="hours" fill="#008ca1" name="Hours" />
+                      <Bar dataKey="hours" fill="#000000" name="Hours" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -156,7 +156,7 @@ const Reports = () => {
                           cy="50%"
                           labelLine={false}
                           outerRadius={80}
-                          fill="#8884d8"
+                          fill="#000000"
                           dataKey="hours"
                           nameKey="name"
                           label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
@@ -186,7 +186,7 @@ const Reports = () => {
                       <h3 className="text-lg font-medium">37 hours</h3>
                       <p className="text-sm text-muted-foreground">Total tracked time</p>
                       <div className="h-2 w-full bg-muted rounded-full mt-2">
-                        <div className="h-2 rounded-full bg-primary" style={{ width: '92.5%' }}></div>
+                        <div className="h-2 rounded-full bg-black" style={{ width: '92.5%' }}></div>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">92.5% of target (40 hours)</p>
                     </div>
@@ -213,7 +213,7 @@ const Reports = () => {
                         <span className="text-sm font-medium">86.5%</span>
                       </div>
                       <div className="h-2 w-full bg-muted rounded-full mt-1">
-                        <div className="h-2 rounded-full bg-success-500" style={{ width: '86.5%' }}></div>
+                        <div className="h-2 rounded-full bg-black" style={{ width: '86.5%' }}></div>
                       </div>
                     </div>
                   </div>
@@ -260,3 +260,4 @@ const Reports = () => {
 };
 
 export default Reports;
+
