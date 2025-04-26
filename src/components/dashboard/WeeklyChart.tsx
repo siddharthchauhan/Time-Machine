@@ -80,4 +80,3 @@ const WeeklyChart = () => {
 };
 
 export default WeeklyChart;
-
