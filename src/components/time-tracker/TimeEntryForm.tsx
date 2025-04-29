@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -58,6 +57,9 @@ const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
   const [trackingDuration, setTrackingDuration] = useState(0);
   const [trackingStartTime, setTrackingStartTime] = useState<Date | null>(null);
   const { toast } = useToast();
+  
+  // Create a tasks variable using the defaultTasks
+  const tasks = defaultTasks;
 
   const formatDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
