@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -13,15 +13,31 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { useToast } from '@/components/ui/use-toast';
 
 interface UserMenuProps {
   sidebarCollapsed: boolean;
 }
 
 const UserMenu = ({ sidebarCollapsed }: UserMenuProps) => {
-  const mockProfile = {
-    full_name: 'Demo User',
-    role: 'employee'
+  const { profile, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logged out successfully",
+      });
+      navigate("/auth");
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error signing out",
+      });
+    }
   };
 
   return (
@@ -38,13 +54,13 @@ const UserMenu = ({ sidebarCollapsed }: UserMenuProps) => {
             <Avatar className="h-8 w-8 border border-sidebar-border">
               <AvatarImage src="" />
               <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground">
-                {mockProfile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                {profile?.full_name?.split(' ').map(n => n?.[0]).join('') || 'U'}
               </AvatarFallback>
             </Avatar>
             {!sidebarCollapsed && (
               <div className="flex-1 overflow-hidden">
-                <p className="text-sm font-medium truncate">{mockProfile?.full_name || 'User'}</p>
-                <p className="text-xs text-sidebar-foreground/70 truncate capitalize">{mockProfile?.role}</p>
+                <p className="text-sm font-medium truncate">{profile?.full_name || 'User'}</p>
+                <p className="text-xs text-sidebar-foreground/70 truncate capitalize">{profile?.role || 'employee'}</p>
               </div>
             )}
           </Button>
@@ -59,7 +75,7 @@ const UserMenu = ({ sidebarCollapsed }: UserMenuProps) => {
             <Link to="/settings" className="flex items-center w-full">Settings</Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-red-500">
+          <DropdownMenuItem className="text-red-500" onClick={handleSignOut}>
             <LogOut className="mr-2 h-4 w-4" />
             <span>Log out</span>
           </DropdownMenuItem>

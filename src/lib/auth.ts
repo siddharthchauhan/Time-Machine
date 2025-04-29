@@ -1,5 +1,5 @@
 
-import { createContext, useContext } from 'react';
+import { createContext } from 'react';
 
 export type UserRole = 'admin' | 'project_manager' | 'employee';
 
@@ -11,20 +11,12 @@ export interface UserProfile {
 }
 
 export interface AuthState {
+  user?: any;
+  session?: any;
   profile: UserProfile | null;
 }
 
+// This context is now implemented in components/auth/AuthProvider.tsx
 export const AuthContext = createContext<AuthState>({
-  profile: {
-    full_name: 'Demo User',
-    role: 'employee'
-  }
+  profile: null
 });
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
