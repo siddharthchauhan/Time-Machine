@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,13 +13,17 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
-const projects = [
-  { id: '1', name: 'Website Redesign' },
-  { id: '2', name: 'Mobile App' },
-  { id: '3', name: 'CRM Integration' },
-];
+type Project = {
+  id: string;
+  name: string;
+};
 
-const tasks = {
+type TimeEntryFormProps = {
+  projects?: Project[];
+};
+
+// Default tasks data structure
+const defaultTasks = {
   '1': [
     { id: '1-1', name: 'Frontend Development' },
     { id: '1-2', name: 'Content Creation' },
@@ -36,7 +41,14 @@ const tasks = {
   ],
 };
 
-const TimeEntryForm = () => {
+const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
+  // If no projects are provided, use some defaults
+  const availableProjects = projects.length > 0 ? projects : [
+    { id: '1', name: 'Website Redesign' },
+    { id: '2', name: 'Mobile App' },
+    { id: '3', name: 'CRM Integration' },
+  ];
+
   const [date, setDate] = useState<Date>(new Date());
   const [isTracking, setIsTracking] = useState(false);
   const [selectedProject, setSelectedProject] = useState('');
@@ -143,7 +155,7 @@ const TimeEntryForm = () => {
                 <SelectValue placeholder="Select a project" />
               </SelectTrigger>
               <SelectContent>
-                {projects.map((project) => (
+                {availableProjects.map((project) => (
                   <SelectItem key={project.id} value={project.id}>
                     {project.name}
                   </SelectItem>

@@ -1,0 +1,149 @@
+
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { PlusCircle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+
+type Project = {
+  id: string;
+  name: string;
+};
+
+type NewTaskDialogProps = {
+  projects: Project[];
+  onTaskCreated: (task: { id: string; name: string; projectId: string }) => void;
+};
+
+const NewTaskDialog = ({ projects, onTaskCreated }: NewTaskDialogProps) => {
+  const [open, setOpen] = useState(false);
+  const [taskName, setTaskName] = useState("");
+  const [taskDescription, setTaskDescription] = useState("");
+  const [selectedProject, setSelectedProject] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!taskName.trim()) {
+      toast({
+        title: "Task name required",
+        description: "Please enter a task name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!selectedProject) {
+      toast({
+        title: "Project required",
+        description: "Please select a project for this task",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    // In a real app, this would be an API call to create the task
+    // For demo purposes, we're creating a mock task with a random ID
+    setTimeout(() => {
+      const newTask = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: taskName,
+        projectId: selectedProject,
+      };
+      
+      onTaskCreated(newTask);
+      
+      toast({
+        title: "Task created",
+        description: `${taskName} has been created successfully`,
+      });
+      
+      // Reset form
+      setTaskName("");
+      setTaskDescription("");
+      setSelectedProject("");
+      setIsSubmitting(false);
+      setOpen(false);
+    }, 500);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-1">
+          <PlusCircle className="h-4 w-4" />
+          New Task
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Create New Task</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="project-select">Project</Label>
+              <Select
+                value={selectedProject}
+                onValueChange={setSelectedProject}
+              >
+                <SelectTrigger id="project-select">
+                  <SelectValue placeholder="Select a project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="task-name">Task Name</Label>
+              <Input
+                id="task-name"
+                value={taskName}
+                onChange={(e) => setTaskName(e.target.value)}
+                placeholder="Enter task name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="task-description">Description (optional)</Label>
+              <Textarea
+                id="task-description"
+                value={taskDescription}
+                onChange={(e) => setTaskDescription(e.target.value)}
+                placeholder="Describe the task..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setOpen(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Creating..." : "Create Task"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default NewTaskDialog;
