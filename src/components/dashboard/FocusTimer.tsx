@@ -30,10 +30,6 @@ const FocusTimer = () => {
     } else if (isRunning && timeLeft === 0) {
       setIsRunning(false);
       
-      // Play notification sound
-      const audio = new Audio('/notification.mp3');
-      audio.play().catch(error => console.error('Error playing notification sound:', error));
-      
       // Show notification
       toast({
         title: isBreak ? "Break finished!" : "Focus session complete!",
