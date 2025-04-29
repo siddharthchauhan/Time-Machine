@@ -5,6 +5,7 @@ import RecentTimeEntries from "@/components/dashboard/RecentTimeEntries";
 import ProjectProgress from "@/components/dashboard/ProjectProgress";
 import UpcomingTasks from "@/components/dashboard/UpcomingTasks";
 import WeeklyChart from "@/components/dashboard/WeeklyChart";
+import FocusTimer from "@/components/dashboard/FocusTimer";
 
 const Index = () => {
   return (
@@ -21,12 +22,13 @@ const Index = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="space-y-4 md:space-y-6">
+            <FocusTimer />
             <RecentTimeEntries />
-            <UpcomingTasks />
           </div>
           <div className="space-y-4 md:space-y-6">
             <WeeklyChart />
             <ProjectProgress />
+            <UpcomingTasks />
           </div>
         </div>
       </div>
