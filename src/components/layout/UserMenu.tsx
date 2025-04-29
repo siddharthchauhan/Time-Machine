@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -13,37 +13,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/lib/auth';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 interface UserMenuProps {
   sidebarCollapsed: boolean;
 }
 
 const UserMenu = ({ sidebarCollapsed }: UserMenuProps) => {
-  const { profile } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    console.log('UserMenu: Logging out');
-    
-    try {
-      await supabase.auth.signOut();
-      toast({
-        title: "Logged out successfully",
-        description: "You have been logged out of your account",
-      });
-      navigate('/auth');
-    } catch (error) {
-      console.error('Error during logout:', error);
-      toast({
-        title: "Error logging out",
-        description: "There was a problem logging out. Please try again.",
-        variant: "destructive"
-      });
-    }
+  const mockProfile = {
+    full_name: 'Demo User',
+    role: 'employee'
   };
 
   return (
@@ -60,13 +38,13 @@ const UserMenu = ({ sidebarCollapsed }: UserMenuProps) => {
             <Avatar className="h-8 w-8 border border-sidebar-border">
               <AvatarImage src="" />
               <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground">
-                {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                {mockProfile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
               </AvatarFallback>
             </Avatar>
             {!sidebarCollapsed && (
               <div className="flex-1 overflow-hidden">
-                <p className="text-sm font-medium truncate">{profile?.full_name || 'User'}</p>
-                <p className="text-xs text-sidebar-foreground/70 truncate capitalize">{profile?.role}</p>
+                <p className="text-sm font-medium truncate">{mockProfile?.full_name || 'User'}</p>
+                <p className="text-xs text-sidebar-foreground/70 truncate capitalize">{mockProfile?.role}</p>
               </div>
             )}
           </Button>
@@ -81,7 +59,7 @@ const UserMenu = ({ sidebarCollapsed }: UserMenuProps) => {
             <Link to="/settings" className="flex items-center w-full">Settings</Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleLogout} className="text-red-500">
+          <DropdownMenuItem className="text-red-500">
             <LogOut className="mr-2 h-4 w-4" />
             <span>Log out</span>
           </DropdownMenuItem>
