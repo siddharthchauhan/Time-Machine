@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Edit, Trash } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,18 +7,10 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserRole } from "@/components/team/types";
+import { UserRole, TeamMember } from "@/components/team/types";
 
 interface TeamMemberCardProps {
-  member: {
-    id: string;
-    name: string;
-    email: string;
-    avatar?: string;
-    role: UserRole;
-    department: string;
-    projects: string[];
-  };
+  member: TeamMember;
   isEditMode?: boolean;
 }
 

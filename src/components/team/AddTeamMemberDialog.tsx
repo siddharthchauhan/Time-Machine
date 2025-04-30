@@ -5,19 +5,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserRole } from "@/components/team/types";
+import { UserRole, NewTeamMember } from "@/components/team/types";
 
 interface AddTeamMemberDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   departments: string[];
-  newMember: {
-    name: string;
-    email: string;
-    department: string;
-    role: UserRole;
-    projects: string[];
-  };
+  newMember: NewTeamMember;
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleSelectChange: (field: string, value: string) => void;
   handleAddUser: (e: React.FormEvent) => void;
@@ -98,6 +92,7 @@ const AddTeamMemberDialog = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="project_manager">Project Manager</SelectItem>
                   <SelectItem value="manager">Manager</SelectItem>
                   <SelectItem value="member">Team Member</SelectItem>
                 </SelectContent>
