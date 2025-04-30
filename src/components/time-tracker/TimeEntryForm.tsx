@@ -1,17 +1,15 @@
+
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Clock, Play, CalendarIcon, CircleStop } from "lucide-react";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useState } from "react";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import TimeEntryHeader from "./TimeEntryHeader";
+import ProjectTaskSelector from "./ProjectTaskSelector";
+import DatePicker from "./DatePicker";
+import TimeTracker from "./TimeTracker";
+import DescriptionField from "./DescriptionField";
+import TimeEntryActions from "./TimeEntryActions";
 
 // Default tasks data structure
 const defaultTasks = {
@@ -154,12 +152,7 @@ const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
         description: "Your time entry has been saved as a draft",
       });
       
-      // Reset form
-      setSelectedProject('');
-      setSelectedTask('');
-      setDescription('');
-      setManualHours('');
-      setTrackingDuration(0);
+      handleReset();
     } catch (error: any) {
       toast({
         title: "Error saving time entry",
@@ -212,12 +205,7 @@ const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
         description: "Your time entry has been submitted for approval",
       });
       
-      // Reset form
-      setSelectedProject('');
-      setSelectedTask('');
-      setDescription('');
-      setManualHours('');
-      setTrackingDuration(0);
+      handleReset();
     } catch (error: any) {
       toast({
         title: "Error submitting time entry",
@@ -229,173 +217,56 @@ const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
     }
   };
 
+  const handleReset = () => {
+    setSelectedProject('');
+    setSelectedTask('');
+    setDescription('');
+    setManualHours('');
+    setTrackingDuration(0);
+    setIsTracking(false);
+  };
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Track Your Time</CardTitle>
-        <CardDescription>
-          Record time spent on tasks and projects
-        </CardDescription>
-      </CardHeader>
+      <TimeEntryHeader />
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
-          <div className="space-y-1">
-            <Label htmlFor="project">Project</Label>
-            <Select 
-              value={selectedProject} 
-              onValueChange={(value) => {
-                setSelectedProject(value);
-                setSelectedTask('');
-              }}
-            >
-              <SelectTrigger id="project">
-                <SelectValue placeholder="Select a project" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableProjects.map((project) => (
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <ProjectTaskSelector 
+            projects={availableProjects}
+            selectedProject={selectedProject}
+            setSelectedProject={setSelectedProject}
+            selectedTask={selectedTask}
+            setSelectedTask={setSelectedTask}
+            tasks={tasks}
+          />
           
-          <div className="space-y-1">
-            <Label htmlFor="task">Task</Label>
-            <Select 
-              value={selectedTask} 
-              onValueChange={setSelectedTask}
-              disabled={!selectedProject}
-            >
-              <SelectTrigger id="task">
-                <SelectValue placeholder="Select a task" />
-              </SelectTrigger>
-              <SelectContent>
-                {selectedProject && tasks[selectedProject as keyof typeof tasks]?.map((task) => (
-                  <SelectItem key={task.id} value={task.id}>
-                    {task.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <DatePicker 
+            date={date}
+            setDate={setDate}
+          />
           
-          <div className="space-y-1">
-            <Label htmlFor="date">Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={(date) => date && setDate(date)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+          <TimeTracker 
+            isTracking={isTracking}
+            trackingDuration={trackingDuration}
+            manualHours={manualHours}
+            setManualHours={setManualHours}
+            handleStartTracking={handleStartTracking}
+            handleStopTracking={handleStopTracking}
+          />
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label htmlFor="hours">Duration (hours)</Label>
-              <Input
-                id="hours"
-                type="number"
-                step="0.25"
-                placeholder="0.00"
-                value={manualHours}
-                onChange={(e) => setManualHours(e.target.value)}
-                disabled={isTracking}
-              />
-            </div>
-            
-            <div className="space-y-1">
-              <Label>Live Timer</Label>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  onClick={isTracking ? handleStopTracking : handleStartTracking}
-                  variant={isTracking ? "destructive" : "default"}
-                  className="flex-1"
-                >
-                  {isTracking ? (
-                    <>
-                      <CircleStop className="mr-2 h-4 w-4" />
-                      Stop
-                    </>
-                  ) : (
-                    <>
-                      <Play className="mr-2 h-4 w-4" />
-                      Start Timer
-                    </>
-                  )}
-                </Button>
-                {isTracking && (
-                  <div className="bg-muted text-foreground p-2 rounded-md min-w-24 text-center">
-                    {formatDuration(trackingDuration)}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          <div className="space-y-1">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              placeholder="Describe the work you did..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
+          <DescriptionField 
+            description={description}
+            setDescription={setDescription}
+          />
         </CardContent>
         
         <CardFooter className="flex flex-col items-start gap-3">
-          <div>
-            <Button variant="outline" type="button" onClick={() => {
-              setSelectedProject('');
-              setSelectedTask('');
-              setDescription('');
-              setManualHours('');
-              setTrackingDuration(0);
-              setIsTracking(false);
-            }}>
-              Reset
-            </Button>
-          </div>
-          
-          <div className="flex gap-2">
-            <Button 
-              type="submit" 
-              disabled={isSubmitting}
-              className="w-40"
-            >
-              <Clock className="mr-2 h-4 w-4 shrink-0" />
-              Save as Draft
-            </Button>
-            <Button 
-              type="button" 
-              onClick={handleSubmitForApproval} 
-              disabled={isSubmitting} 
-              variant="default"
-              className="w-40"
-            >
-              <Clock className="mr-2 h-4 w-4 shrink-0" />
-              Submit for Approval
-            </Button>
-          </div>
+          <TimeEntryActions 
+            isSubmitting={isSubmitting}
+            isTracking={isTracking}
+            handleSubmitForApproval={handleSubmitForApproval}
+            handleReset={handleReset}
+          />
         </CardFooter>
       </form>
     </Card>
