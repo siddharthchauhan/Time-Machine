@@ -83,12 +83,22 @@ const TeamList = () => {
   const [filterRole, setFilterRole] = useState('all');
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [members, setMembers] = useState<TeamMember[]>(teamMembers);
   const { toast } = useToast();
   
-  // Get unique departments for filter
-  const departments = Array.from(new Set(teamMembers.map(member => member.department)));
+  // Form state for new member
+  const [newMember, setNewMember] = useState({
+    name: '',
+    email: '',
+    department: '',
+    role: 'member' as UserRole,
+    projects: [] as string[]
+  });
   
-  const filteredMembers = teamMembers.filter(member => {
+  // Get unique departments for filter
+  const departments = Array.from(new Set(members.map(member => member.department)));
+  
+  const filteredMembers = members.filter(member => {
     const matchesSearch = 
       member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -99,12 +109,50 @@ const TeamList = () => {
     return matchesSearch && matchesRole && matchesDepartment;
   });
   
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setNewMember({
+      ...newMember,
+      [id.replace('new-', '')]: value
+    });
+  };
+  
+  const handleSelectChange = (field: string, value: string) => {
+    setNewMember({
+      ...newMember,
+      [field]: value
+    });
+  };
+  
   const handleAddUser = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Create new team member
+    const newTeamMember: TeamMember = {
+      id: `${members.length + 1}`,
+      name: newMember.name,
+      email: newMember.email,
+      role: newMember.role,
+      department: newMember.department,
+      projects: newMember.projects.length ? [newMember.projects[0]] : []
+    };
+    
+    // Update state with new member
+    setMembers([...members, newTeamMember]);
+    
+    // Show success toast
     toast({
       title: "Team member added",
-      description: "New team member has been added successfully",
+      description: `${newMember.name} has been added successfully`,
+    });
+    
+    // Reset form and close dialog
+    setNewMember({
+      name: '',
+      email: '',
+      department: '',
+      role: 'member',
+      projects: []
     });
     
     setShowAddDialog(false);
@@ -268,7 +316,7 @@ const TeamList = () => {
             {(['admin', 'manager', 'member'] as UserRole[]).map(role => (
               <TabsContent key={role} value={role}>
                 <div className="space-y-4 mt-4">
-                  {teamMembers.filter(member => member.role === role).map((member) => (
+                  {members.filter(member => member.role === role).map((member) => (
                     <div key={member.id} className="flex items-center p-4 rounded-lg border">
                       <Avatar className="h-10 w-10">
                         <AvatarImage src={member.avatar} />
@@ -313,7 +361,7 @@ const TeamList = () => {
         <CardFooter>
           <div className="w-full flex justify-between items-center">
             <p className="text-sm text-muted-foreground">
-              Showing {filteredMembers.length} of {teamMembers.length} team members
+              Showing {filteredMembers.length} of {members.length} team members
             </p>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" disabled>Previous</Button>
@@ -336,15 +384,32 @@ const TeamList = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="new-name">Name</Label>
-                <Input id="new-name" placeholder="Full name" required />
+                <Input 
+                  id="new-name" 
+                  placeholder="Full name" 
+                  value={newMember.name}
+                  onChange={handleInputChange}
+                  required 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="new-email">Email</Label>
-                <Input id="new-email" type="email" placeholder="Email address" required />
+                <Input 
+                  id="new-email" 
+                  type="email" 
+                  placeholder="Email address" 
+                  value={newMember.email}
+                  onChange={handleInputChange}
+                  required 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="new-department">Department</Label>
-                <Select required>
+                <Select 
+                  value={newMember.department} 
+                  onValueChange={(value) => handleSelectChange('department', value)}
+                  required
+                >
                   <SelectTrigger id="new-department">
                     <SelectValue placeholder="Select department" />
                   </SelectTrigger>
@@ -352,13 +417,21 @@ const TeamList = () => {
                     {departments.map(dept => (
                       <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                     ))}
-                    <SelectItem value="new">+ Add New Department</SelectItem>
+                    <SelectItem value="Engineering">Engineering</SelectItem>
+                    <SelectItem value="Design">Design</SelectItem>
+                    <SelectItem value="Marketing">Marketing</SelectItem>
+                    <SelectItem value="Sales">Sales</SelectItem>
+                    <SelectItem value="HR">Human Resources</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="new-role">Role</Label>
-                <Select defaultValue="member" required>
+                <Select 
+                  value={newMember.role} 
+                  onValueChange={(value) => handleSelectChange('role', value as UserRole)}
+                  required
+                >
                   <SelectTrigger id="new-role">
                     <SelectValue />
                   </SelectTrigger>
@@ -372,14 +445,17 @@ const TeamList = () => {
             </div>
             <div className="pt-4">
               <Label htmlFor="new-projects">Projects</Label>
-              <Select>
+              <Select 
+                value={newMember.projects[0] || ""} 
+                onValueChange={(value) => handleSelectChange('projects', [value])}
+              >
                 <SelectTrigger id="new-projects">
                   <SelectValue placeholder="Assign to projects" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="website">Website Redesign</SelectItem>
-                  <SelectItem value="mobile">Mobile App</SelectItem>
-                  <SelectItem value="crm">CRM Integration</SelectItem>
+                  <SelectItem value="Website Redesign">Website Redesign</SelectItem>
+                  <SelectItem value="Mobile App">Mobile App</SelectItem>
+                  <SelectItem value="CRM Integration">CRM Integration</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-2">You can assign more projects later</p>
