@@ -1,14 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import TimeEntryForm from "@/components/time-tracker/TimeEntryForm";
 import TimeEntriesList from "@/components/time-tracker/TimeEntriesList";
 import NewProjectDialog from "@/components/time-tracker/NewProjectDialog";
 import NewTaskDialog from "@/components/time-tracker/NewTaskDialog";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { supabase } from "@/integrations/supabase/client";
-import { useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
 
 // Default projects for demo purposes
 const defaultProjects = [
@@ -20,7 +18,7 @@ const defaultProjects = [
 const TimeTracker = () => {
   const [projects, setProjects] = useState<any[]>(defaultProjects);
   const { toast } = useToast();
-  const { profile } = useAuth();
+  const { profile, supabase } = useAuth();
   
   useEffect(() => {
     // Fetch actual projects from Supabase
@@ -41,7 +39,7 @@ const TimeTracker = () => {
     };
     
     fetchProjects();
-  }, []);
+  }, [supabase]);
   
   const handleProjectCreated = (newProject: { id: string; name: string }) => {
     setProjects([...projects, newProject]);

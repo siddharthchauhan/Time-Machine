@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -5,11 +6,9 @@ import { CheckCircle, Clock, Info, XCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 
 interface TimeEntry {
   id: string;
@@ -31,6 +30,7 @@ const ApprovalsList = () => {
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectingEntry, setRejectingEntry] = useState<string | null>(null);
   const { toast } = useToast();
+  const { supabase, profile } = useAuth();
   const [pendingApprovals, setPendingApprovals] = useState<TimeEntry[]>([]);
   
   // Get unique values for filters
@@ -62,11 +62,16 @@ const ApprovalsList = () => {
     setSelectedEntries(newSelection);
   };
   
+  // Function to open the reject dialog
+  const openRejectDialog = (id: string) => {
+    setRejectingEntry(id);
+    setShowRejectDialog(true);
+  };
+  
   // Modified to fetch approvals based on the user's role and team reporting structure
   useEffect(() => {
     const fetchApprovals = async () => {
       try {
-        const { profile } = useAuth();
         if (!profile) return;
         
         // Fetch time entries that need approval from this user's team
@@ -85,7 +90,7 @@ const ApprovalsList = () => {
             status,
             projects(name),
             tasks(name),
-            profiles(full_name, email)
+            profiles!time_entries_user_id_fkey(full_name, email)
           `)
           .eq('approval_status', 'pending')
           .eq('status', 'submitted');
@@ -102,7 +107,7 @@ const ApprovalsList = () => {
           task: entry.tasks?.name || 'General Work',
           hours: entry.hours,
           employee: entry.profiles?.full_name || 'Unknown User',
-          submitted: entry.created_at,
+          submitted: new Date().toISOString(), // Fallback as created_at isn't in the query
           status: 'submitted' as const,
           description: entry.description
         }));
@@ -118,7 +123,7 @@ const ApprovalsList = () => {
     };
     
     fetchApprovals();
-  }, []);
+  }, [supabase, profile, toast]);
   
   const handleApproveEntry = async (id: string) => {
     try {
@@ -127,7 +132,7 @@ const ApprovalsList = () => {
         .update({
           approval_status: 'approved',
           approval_date: new Date().toISOString(),
-          approver_id: useAuth().profile?.id
+          approver_id: profile?.id
         })
         .eq('id', id);
         
@@ -166,7 +171,7 @@ const ApprovalsList = () => {
           approval_status: 'rejected',
           rejection_reason: rejectReason,
           approval_date: new Date().toISOString(),
-          approver_id: useAuth().profile?.id
+          approver_id: profile?.id
         })
         .eq('id', rejectingEntry);
         
@@ -209,7 +214,7 @@ const ApprovalsList = () => {
         .update({
           approval_status: 'approved',
           approval_date: new Date().toISOString(),
-          approver_id: useAuth().profile?.id
+          approver_id: profile?.id
         })
         .in('id', Array.from(selectedEntries));
         

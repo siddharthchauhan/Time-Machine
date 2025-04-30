@@ -58,8 +58,7 @@ const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
   const [trackingDuration, setTrackingDuration] = useState(0);
   const [trackingStartTime, setTrackingStartTime] = useState<Date | null>(null);
   const { toast } = useToast();
-  const { supabase } = useAuth();
-  const { profile } = useAuth();
+  const { profile, supabase } = useAuth();
   
   // Create a tasks variable using the defaultTasks
   const tasks = defaultTasks;
