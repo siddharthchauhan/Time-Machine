@@ -1,11 +1,11 @@
 
 import React from 'react';
 import { TeamMember } from './types';
-import TeamOverviewCard from './dashboard/TeamOverviewCard';
-import DepartmentDistributionChart from './dashboard/DepartmentDistributionChart';
-import TeamRolesChart from './dashboard/TeamRolesChart';
-import ProjectAssignmentsChart from './dashboard/ProjectAssignmentsChart';
-import TeamDirectoryTable from './dashboard/TeamDirectoryTable';
+import TeamOverviewCard from './dashboard/cards/TeamOverviewCard';
+import DepartmentDistributionChart from './dashboard/charts/DepartmentDistributionChart';
+import TeamRolesChart from './dashboard/charts/TeamRolesChart';
+import ProjectAssignmentsChart from './dashboard/charts/ProjectAssignmentsChart';
+import TeamDirectoryTable from './dashboard/tables/TeamDirectoryTable';
 
 interface TeamDashboardProps {
   members: TeamMember[];

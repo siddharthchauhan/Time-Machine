@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { TeamMember } from '../types';
+import { TeamMember } from '../../types';
 
 interface TeamOverviewCardProps {
   members: TeamMember[];

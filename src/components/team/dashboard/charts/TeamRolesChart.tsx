@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TeamMember } from '../types';
+import { TeamMember } from '../../types';
 
 interface TeamRolesChartProps {
   members: TeamMember[];

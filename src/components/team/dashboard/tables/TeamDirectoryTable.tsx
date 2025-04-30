@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { TeamMember } from '../types';
+import { TeamMember } from '../../types';
 
 interface TeamDirectoryTableProps {
   members: TeamMember[];
