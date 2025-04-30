@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,15 +13,6 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-
-type Project = {
-  id: string;
-  name: string;
-};
-
-type TimeEntryFormProps = {
-  projects?: Project[];
-};
 
 // Default tasks data structure
 const defaultTasks = {
@@ -39,6 +31,15 @@ const defaultTasks = {
     { id: '3-2', name: 'Integration Testing' },
     { id: '3-3', name: 'Documentation' },
   ],
+};
+
+type Project = {
+  id: string;
+  name: string;
+};
+
+type TimeEntryFormProps = {
+  projects?: Project[];
 };
 
 const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
@@ -361,23 +362,33 @@ const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
             />
           </div>
         </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button variant="outline" type="button" onClick={() => {
-            setSelectedProject('');
-            setSelectedTask('');
-            setDescription('');
-            setManualHours('');
-            setTrackingDuration(0);
-            setIsTracking(false);
-          }}>
-            Reset
-          </Button>
-          <div className="space-x-2">
+        
+        {/* Update the CardFooter to fix button alignment */}
+        <CardFooter className="flex flex-wrap gap-3 justify-between">
+          <div>
+            <Button variant="outline" type="button" onClick={() => {
+              setSelectedProject('');
+              setSelectedTask('');
+              setDescription('');
+              setManualHours('');
+              setTrackingDuration(0);
+              setIsTracking(false);
+            }}>
+              Reset
+            </Button>
+          </div>
+          
+          <div className="flex gap-2">
             <Button type="submit" disabled={isSubmitting}>
               <Clock className="mr-2 h-4 w-4" />
               Save as Draft
             </Button>
-            <Button type="button" onClick={handleSubmitForApproval} disabled={isSubmitting} variant="default">
+            <Button 
+              type="button" 
+              onClick={handleSubmitForApproval} 
+              disabled={isSubmitting} 
+              variant="default"
+            >
               <Clock className="mr-2 h-4 w-4" />
               Submit for Approval
             </Button>

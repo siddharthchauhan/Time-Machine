@@ -64,7 +64,7 @@ const TimeTracker = () => {
               Record and manage your time entries for projects and tasks.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center space-x-3">
             <NewTaskDialog projects={projects} onTaskCreated={handleTaskCreated} />
             <NewProjectDialog onProjectCreated={handleProjectCreated} />
           </div>
