@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,9 +7,12 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import ThemeSelector from "@/components/theme/ThemeSelector";
+import { useTheme } from "@/components/theme/ThemeProvider";
 
 const SettingsForm = () => {
   const { toast } = useToast();
+  const { theme } = useTheme();
   
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -197,23 +199,7 @@ const SettingsForm = () => {
             <form onSubmit={handleSaveAppearance} className="space-y-6 py-4">
               <div>
                 <h3 className="text-lg font-medium mb-4">Theme</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="relative aspect-video cursor-pointer rounded-md overflow-hidden border-2 border-primary bg-white">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-sm font-medium">Light</span>
-                    </div>
-                  </div>
-                  <div className="relative aspect-video cursor-pointer rounded-md overflow-hidden border-2 border-muted bg-gray-950">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-sm font-medium text-white">Dark</span>
-                    </div>
-                  </div>
-                  <div className="relative aspect-video cursor-pointer rounded-md overflow-hidden border-2 border-muted bg-gradient-to-r from-white to-gray-950">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-sm font-medium">System</span>
-                    </div>
-                  </div>
-                </div>
+                <ThemeSelector />
               </div>
               
               <div>

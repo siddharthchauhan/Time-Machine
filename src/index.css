@@ -91,6 +91,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 }
 
@@ -98,5 +99,13 @@
   .bg-glass {
     @apply bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl;
   }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
 }
-
