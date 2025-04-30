@@ -16,20 +16,23 @@ const TimeEntryActions = ({
   handleReset
 }: TimeEntryActionsProps) => {
   return (
-    <>
-      <div>
-        <Button variant="outline" type="button" onClick={handleReset}>
-          Reset
-        </Button>
-      </div>
+    <div className="flex flex-wrap items-center justify-between w-full gap-3">
+      <Button 
+        variant="outline" 
+        type="button" 
+        onClick={handleReset}
+        className="px-6"
+      >
+        Reset
+      </Button>
       
-      <div className="flex gap-2">
+      <div className="flex gap-3">
         <Button 
           type="submit" 
           disabled={isSubmitting}
-          className="w-40"
+          className="px-6"
         >
-          <Clock className="mr-2 h-4 w-4 shrink-0" />
+          <Clock className="mr-2 h-4 w-4" />
           Save as Draft
         </Button>
         <Button 
@@ -37,13 +40,13 @@ const TimeEntryActions = ({
           onClick={handleSubmitForApproval} 
           disabled={isSubmitting || isTracking} 
           variant="default"
-          className="w-40"
+          className="px-6"
         >
-          <Clock className="mr-2 h-4 w-4 shrink-0" />
+          <Clock className="mr-2 h-4 w-4" />
           Submit for Approval
         </Button>
       </div>
-    </>
+    </div>
   );
 };
 
