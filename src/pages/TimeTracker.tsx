@@ -1,11 +1,14 @@
 
+import { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import TimeEntryForm from "@/components/time-tracker/TimeEntryForm";
 import TimeEntriesList from "@/components/time-tracker/TimeEntriesList";
 import NewProjectDialog from "@/components/time-tracker/NewProjectDialog";
 import NewTaskDialog from "@/components/time-tracker/NewTaskDialog";
-import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 
 // Default projects for demo purposes
 const defaultProjects = [
@@ -15,8 +18,30 @@ const defaultProjects = [
 ];
 
 const TimeTracker = () => {
-  const [projects, setProjects] = useState(defaultProjects);
+  const [projects, setProjects] = useState<any[]>(defaultProjects);
   const { toast } = useToast();
+  const { profile } = useAuth();
+  
+  useEffect(() => {
+    // Fetch actual projects from Supabase
+    const fetchProjects = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('projects')
+          .select('id, name');
+          
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          setProjects(data);
+        }
+      } catch (error: any) {
+        console.error('Error fetching projects:', error);
+      }
+    };
+    
+    fetchProjects();
+  }, []);
   
   const handleProjectCreated = (newProject: { id: string; name: string }) => {
     setProjects([...projects, newProject]);

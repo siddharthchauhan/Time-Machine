@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
 type Project = {
   id: string;
@@ -57,6 +58,8 @@ const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
   const [trackingDuration, setTrackingDuration] = useState(0);
   const [trackingStartTime, setTrackingStartTime] = useState<Date | null>(null);
   const { toast } = useToast();
+  const { supabase } = useAuth();
+  const { profile } = useAuth();
   
   // Create a tasks variable using the defaultTasks
   const tasks = defaultTasks;
@@ -106,7 +109,10 @@ const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Add state for handling submission
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedProject || !selectedTask || (!manualHours && !isTracking)) {
@@ -121,17 +127,107 @@ const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
     if (isTracking) {
       handleStopTracking();
     }
+
+    setIsSubmitting(true);
     
-    toast({
-      title: "Time entry saved",
-      description: "Your time entry has been submitted successfully",
-    });
+    try {
+      // Save time entry to Supabase
+      const hours = parseFloat(manualHours);
+      const entryDate = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+      
+      const { error } = await supabase
+        .from('time_entries')
+        .insert({
+          project_id: selectedProject,
+          task_id: selectedTask,
+          date: entryDate,
+          hours: hours,
+          description: description,
+          user_id: profile?.id,
+          status: 'draft',
+          approval_status: 'pending'
+        });
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Time entry saved",
+        description: "Your time entry has been saved as a draft",
+      });
+      
+      // Reset form
+      setSelectedProject('');
+      setSelectedTask('');
+      setDescription('');
+      setManualHours('');
+      setTrackingDuration(0);
+    } catch (error: any) {
+      toast({
+        title: "Error saving time entry",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  const handleSubmitForApproval = async () => {
+    if (!selectedProject || !selectedTask || (!manualHours && !isTracking)) {
+      toast({
+        title: "Required fields missing",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    setSelectedProject('');
-    setSelectedTask('');
-    setDescription('');
-    setManualHours('');
-    setTrackingDuration(0);
+    if (isTracking) {
+      handleStopTracking();
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      // Save time entry to Supabase and submit for approval
+      const hours = parseFloat(manualHours);
+      const entryDate = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+      
+      const { error } = await supabase
+        .from('time_entries')
+        .insert({
+          project_id: selectedProject,
+          task_id: selectedTask,
+          date: entryDate,
+          hours: hours,
+          description: description,
+          user_id: profile?.id,
+          status: 'submitted',
+          approval_status: 'pending'
+        });
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Time entry submitted",
+        description: "Your time entry has been submitted for approval",
+      });
+      
+      // Reset form
+      setSelectedProject('');
+      setSelectedTask('');
+      setDescription('');
+      setManualHours('');
+      setTrackingDuration(0);
+    } catch (error: any) {
+      toast({
+        title: "Error submitting time entry",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -277,10 +373,16 @@ const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
           }}>
             Reset
           </Button>
-          <Button type="submit">
-            <Clock className="mr-2 h-4 w-4" />
-            Save Time Entry
-          </Button>
+          <div className="space-x-2">
+            <Button type="submit" disabled={isSubmitting}>
+              <Clock className="mr-2 h-4 w-4" />
+              Save as Draft
+            </Button>
+            <Button type="button" onClick={handleSubmitForApproval} disabled={isSubmitting} variant="default">
+              <Clock className="mr-2 h-4 w-4" />
+              Submit for Approval
+            </Button>
+          </div>
         </CardFooter>
       </form>
     </Card>

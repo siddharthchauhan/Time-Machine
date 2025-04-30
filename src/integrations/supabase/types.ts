@@ -9,32 +9,77 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      departments: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
+          department_id: string | null
           email: string
           full_name: string | null
           id: string
+          manager_id: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
         }
         Insert: {
           created_at?: string
+          department_id?: string | null
           email: string
           full_name?: string | null
           id: string
+          manager_id?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
         Update: {
           created_at?: string
+          department_id?: string | null
           email?: string
           full_name?: string | null
           id?: string
+          manager_id?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       projects: {
         Row: {
@@ -131,42 +176,61 @@ export type Database = {
       }
       time_entries: {
         Row: {
+          approval_date: string | null
+          approval_status: string
+          approver_id: string | null
           created_at: string
           date: string
           description: string | null
           hours: number
           id: string
           project_id: string
+          rejection_reason: string | null
           status: string
           task_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          approval_date?: string | null
+          approval_status?: string
+          approver_id?: string | null
           created_at?: string
           date: string
           description?: string | null
           hours: number
           id?: string
           project_id: string
+          rejection_reason?: string | null
           status?: string
           task_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          approval_date?: string | null
+          approval_status?: string
+          approver_id?: string | null
           created_at?: string
           date?: string
           description?: string | null
           hours?: number
           id?: string
           project_id?: string
+          rejection_reason?: string | null
           status?: string
           task_id?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "time_entries_approver_id_fkey"
+            columns: ["approver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "time_entries_project_id_fkey"
             columns: ["project_id"]

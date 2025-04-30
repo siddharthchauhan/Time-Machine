@@ -8,6 +8,8 @@ export interface UserProfile {
   email?: string;
   full_name?: string | null;
   role?: UserRole;
+  manager_id?: string | null;
+  department_id?: string | null;
 }
 
 export interface AuthState {

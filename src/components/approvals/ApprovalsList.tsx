@@ -1,14 +1,15 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Clock, Info, XCircle } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TimeEntry {
   id: string;
@@ -22,42 +23,6 @@ interface TimeEntry {
   description?: string;
 }
 
-const pendingApprovals: TimeEntry[] = [
-  {
-    id: '1',
-    date: '2025-04-22',
-    project: 'Website Redesign',
-    task: 'Frontend Development',
-    hours: 4.5,
-    employee: 'John Smith',
-    submitted: '2025-04-22',
-    status: 'submitted',
-    description: 'Implemented responsive header and navigation'
-  },
-  {
-    id: '2',
-    date: '2025-04-21',
-    project: 'Mobile App',
-    task: 'UI Design',
-    hours: 3,
-    employee: 'Sarah Johnson',
-    submitted: '2025-04-22',
-    status: 'submitted',
-    description: 'Created mockups for profile screens'
-  },
-  {
-    id: '3',
-    date: '2025-04-21',
-    project: 'CRM Integration',
-    task: 'API Development',
-    hours: 6,
-    employee: 'Michael Wong',
-    submitted: '2025-04-21',
-    status: 'submitted',
-    description: 'Working on authentication endpoints'
-  }
-];
-
 const ApprovalsList = () => {
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
   const [filterEmployee, setFilterEmployee] = useState('all');
@@ -66,6 +31,7 @@ const ApprovalsList = () => {
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectingEntry, setRejectingEntry] = useState<string | null>(null);
   const { toast } = useToast();
+  const [pendingApprovals, setPendingApprovals] = useState<TimeEntry[]>([]);
   
   // Get unique values for filters
   const uniqueEmployees = Array.from(new Set(pendingApprovals.map(entry => entry.employee)));
@@ -96,7 +62,137 @@ const ApprovalsList = () => {
     setSelectedEntries(newSelection);
   };
   
-  const handleApproveSelected = () => {
+  // Modified to fetch approvals based on the user's role and team reporting structure
+  useEffect(() => {
+    const fetchApprovals = async () => {
+      try {
+        const { profile } = useAuth();
+        if (!profile) return;
+        
+        // Fetch time entries that need approval from this user's team
+        const { data, error } = await supabase
+          .from('time_entries')
+          .select(`
+            id,
+            date,
+            project_id,
+            task_id,
+            hours,
+            description,
+            user_id,
+            approval_status,
+            rejection_reason,
+            status,
+            projects(name),
+            tasks(name),
+            profiles(full_name, email)
+          `)
+          .eq('approval_status', 'pending')
+          .eq('status', 'submitted');
+          
+        // The Row Level Security policies will automatically filter approvals
+        // to only show entries where this user is the manager or an admin/PM
+        
+        if (error) throw error;
+        
+        const formattedApprovals = (data || []).map(entry => ({
+          id: entry.id,
+          date: entry.date,
+          project: entry.projects?.name || 'Unknown Project',
+          task: entry.tasks?.name || 'General Work',
+          hours: entry.hours,
+          employee: entry.profiles?.full_name || 'Unknown User',
+          submitted: entry.created_at,
+          status: 'submitted' as const,
+          description: entry.description
+        }));
+        
+        setPendingApprovals(formattedApprovals);
+      } catch (error: any) {
+        toast({
+          title: "Error fetching approvals",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
+    };
+    
+    fetchApprovals();
+  }, []);
+  
+  const handleApproveEntry = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('time_entries')
+        .update({
+          approval_status: 'approved',
+          approval_date: new Date().toISOString(),
+          approver_id: useAuth().profile?.id
+        })
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Entry approved",
+        description: "The time entry has been approved successfully",
+      });
+      
+      // Remove from local state
+      setPendingApprovals(prev => prev.filter(entry => entry.id !== id));
+    } catch (error: any) {
+      toast({
+        title: "Error approving entry",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleRejectEntry = async () => {
+    if (!rejectingEntry || !rejectReason.trim()) {
+      toast({
+        title: "Feedback required",
+        description: "Please provide a reason for rejection",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('time_entries')
+        .update({
+          approval_status: 'rejected',
+          rejection_reason: rejectReason,
+          approval_date: new Date().toISOString(),
+          approver_id: useAuth().profile?.id
+        })
+        .eq('id', rejectingEntry);
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Entry rejected",
+        description: "Feedback has been sent to the employee",
+      });
+      
+      // Remove from local state
+      setPendingApprovals(prev => prev.filter(entry => entry.id !== rejectingEntry));
+      
+      setShowRejectDialog(false);
+      setRejectingEntry(null);
+      setRejectReason('');
+    } catch (error: any) {
+      toast({
+        title: "Error rejecting entry",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleApproveSelected = async () => {
     if (selectedEntries.size === 0) {
       toast({
         title: "No entries selected",
@@ -106,46 +202,38 @@ const ApprovalsList = () => {
       return;
     }
     
-    toast({
-      title: "Entries approved",
-      description: `Successfully approved ${selectedEntries.size} time ${selectedEntries.size === 1 ? 'entry' : 'entries'}`,
-    });
-    
-    // Reset selection
-    setSelectedEntries(new Set());
-  };
-  
-  const handleApproveEntry = (id: string) => {
-    toast({
-      title: "Entry approved",
-      description: "The time entry has been approved successfully",
-    });
-  };
-  
-  const openRejectDialog = (id: string) => {
-    setRejectingEntry(id);
-    setRejectReason('');
-    setShowRejectDialog(true);
-  };
-  
-  const handleRejectEntry = () => {
-    if (!rejectReason.trim()) {
+    try {
+      // Update all selected entries at once
+      const { error } = await supabase
+        .from('time_entries')
+        .update({
+          approval_status: 'approved',
+          approval_date: new Date().toISOString(),
+          approver_id: useAuth().profile?.id
+        })
+        .in('id', Array.from(selectedEntries));
+        
+      if (error) throw error;
+      
       toast({
-        title: "Feedback required",
-        description: "Please provide a reason for rejection",
-        variant: "destructive",
+        title: "Entries approved",
+        description: `Successfully approved ${selectedEntries.size} time ${selectedEntries.size === 1 ? 'entry' : 'entries'}`,
       });
-      return;
+      
+      // Update local state
+      setPendingApprovals(prev => 
+        prev.filter(entry => !selectedEntries.has(entry.id))
+      );
+      
+      // Reset selection
+      setSelectedEntries(new Set());
+    } catch (error: any) {
+      toast({
+        title: "Error approving entries",
+        description: error.message,
+        variant: "destructive"
+      });
     }
-    
-    toast({
-      title: "Entry rejected",
-      description: "Feedback has been sent to the employee",
-    });
-    
-    setShowRejectDialog(false);
-    setRejectingEntry(null);
-    setRejectReason('');
   };
   
   return (
