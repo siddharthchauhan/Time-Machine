@@ -362,7 +362,7 @@ const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
           </div>
         </CardContent>
         
-        <CardFooter className="flex flex-wrap gap-3 justify-between">
+        <CardFooter className="flex flex-col items-start gap-3">
           <div>
             <Button variant="outline" type="button" onClick={() => {
               setSelectedProject('');
@@ -380,20 +380,20 @@ const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
             <Button 
               type="submit" 
               disabled={isSubmitting}
-              className="w-32 truncate"
+              className="w-40"
             >
               <Clock className="mr-2 h-4 w-4 shrink-0" />
-              <span className="truncate">Save as Draft</span>
+              Save as Draft
             </Button>
             <Button 
               type="button" 
               onClick={handleSubmitForApproval} 
               disabled={isSubmitting} 
               variant="default"
-              className="w-32 truncate"
+              className="w-40"
             >
               <Clock className="mr-2 h-4 w-4 shrink-0" />
-              <span className="truncate">Submit for Approval</span>
+              Submit for Approval
             </Button>
           </div>
         </CardFooter>
