@@ -1,5 +1,5 @@
 
-export type UserRole = 'admin' | 'manager' | 'member';
+export type UserRole = 'admin' | 'manager' | 'member' | 'project_manager';
 
 export interface TeamMember {
   id: string;

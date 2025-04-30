@@ -55,6 +55,7 @@ const TeamFilters = ({
           <SelectItem value="all">All Roles</SelectItem>
           <SelectItem value="admin">Admin</SelectItem>
           <SelectItem value="manager">Manager</SelectItem>
+          <SelectItem value="project_manager">Project Manager</SelectItem>
           <SelectItem value="member">Team Member</SelectItem>
         </SelectContent>
       </Select>

@@ -27,6 +27,8 @@ const getRoleBadge = (role: UserRole) => {
   switch (role) {
     case 'admin':
       return <Badge className="bg-brand-500">Admin</Badge>;
+    case 'project_manager':
+      return <Badge variant="outline" className="border-purple-300 text-purple-700">Project Manager</Badge>;
     case 'manager':
       return <Badge variant="outline" className="border-brand-300 text-brand-700">Manager</Badge>;
     case 'member':
@@ -99,6 +101,7 @@ const TeamMemberCard = ({ member, isEditMode = true }: TeamMemberCardProps) => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="project_manager">Project Manager</SelectItem>
                         <SelectItem value="manager">Manager</SelectItem>
                         <SelectItem value="member">Team Member</SelectItem>
                       </SelectContent>

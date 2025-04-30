@@ -9,6 +9,8 @@ import TeamMemberCard from "./TeamMemberCard";
 import TeamFilters from "./TeamFilters";
 import AddTeamMemberDialog from "./AddTeamMemberDialog";
 import { TeamMember, UserRole, NewTeamMember } from "./types";
+import TeamDashboard from "./TeamDashboard";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 // Initial team members data
 const initialTeamMembers: TeamMember[] = [
@@ -61,6 +63,9 @@ const TeamList = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [members, setMembers] = useState<TeamMember[]>(initialTeamMembers);
   const { toast } = useToast();
+  const { profile } = useAuth();
+  
+  const isProjectManager = profile?.role === 'project_manager' || profile?.role === 'admin';
   
   // Form state for new member
   const [newMember, setNewMember] = useState<NewTeamMember>({
@@ -159,13 +164,23 @@ const TeamList = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="all" className="mb-6">
-            <TabsList className="grid grid-cols-4">
+          <Tabs defaultValue={isProjectManager ? "dashboard" : "all"} className="mb-6">
+            <TabsList className="grid grid-cols-5">
+              {isProjectManager && <TabsTrigger value="dashboard">Dashboard</TabsTrigger>}
               <TabsTrigger value="all">All Users</TabsTrigger>
               <TabsTrigger value="admin">Admins</TabsTrigger>
               <TabsTrigger value="manager">Managers</TabsTrigger>
               <TabsTrigger value="member">Team Members</TabsTrigger>
             </TabsList>
+            
+            {isProjectManager && (
+              <TabsContent value="dashboard">
+                <div className="mt-4">
+                  <TeamDashboard members={members} />
+                </div>
+              </TabsContent>
+            )}
+            
             <TabsContent value="all">
               <div className="mt-4">
                 <TeamFilters
@@ -191,6 +206,7 @@ const TeamList = () => {
                 </div>
               </div>
             </TabsContent>
+            
             {(['admin', 'manager', 'member'] as UserRole[]).map(role => (
               <TabsContent key={role} value={role}>
                 <div className="space-y-4 mt-4">
