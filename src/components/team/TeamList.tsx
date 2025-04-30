@@ -10,6 +10,7 @@ import TeamDashboard from "./TeamDashboard";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useTeamData } from "./useTeamData";
 import TeamTabContent from "./TeamTabContent";
+import TeamMemberCard from "./TeamMemberCard";
 
 const TeamList = () => {
   const [filterRole, setFilterRole] = useState('all');
