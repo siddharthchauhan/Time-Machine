@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -381,20 +380,20 @@ const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
             <Button 
               type="submit" 
               disabled={isSubmitting}
-              className="w-32"
+              className="w-32 truncate"
             >
-              <Clock className="mr-2 h-4 w-4" />
-              Save as Draft
+              <Clock className="mr-2 h-4 w-4 shrink-0" />
+              <span className="truncate">Save as Draft</span>
             </Button>
             <Button 
               type="button" 
               onClick={handleSubmitForApproval} 
               disabled={isSubmitting} 
               variant="default"
-              className="w-32"
+              className="w-32 truncate"
             >
-              <Clock className="mr-2 h-4 w-4" />
-              Submit for Approval
+              <Clock className="mr-2 h-4 w-4 shrink-0" />
+              <span className="truncate">Submit for Approval</span>
             </Button>
           </div>
         </CardFooter>
