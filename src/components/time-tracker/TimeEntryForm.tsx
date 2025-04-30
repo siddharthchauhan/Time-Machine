@@ -363,7 +363,6 @@ const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
           </div>
         </CardContent>
         
-        {/* Update the CardFooter to fix button alignment */}
         <CardFooter className="flex flex-wrap gap-3 justify-between">
           <div>
             <Button variant="outline" type="button" onClick={() => {
@@ -379,7 +378,11 @@ const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
           </div>
           
           <div className="flex gap-2">
-            <Button type="submit" disabled={isSubmitting}>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting}
+              className="w-32"
+            >
               <Clock className="mr-2 h-4 w-4" />
               Save as Draft
             </Button>
@@ -388,6 +391,7 @@ const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
               onClick={handleSubmitForApproval} 
               disabled={isSubmitting} 
               variant="default"
+              className="w-32"
             >
               <Clock className="mr-2 h-4 w-4" />
               Submit for Approval
