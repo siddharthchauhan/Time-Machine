@@ -2,6 +2,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -32,6 +33,9 @@ export function ProjectDialog({
           <DialogTitle>
             {currentProject ? "Edit Project" : "Create New Project"}
           </DialogTitle>
+          <DialogDescription>
+            {currentProject ? "Update the project details below." : "Enter the details for your new project."}
+          </DialogDescription>
         </DialogHeader>
         <ProjectForm
           initialValues={

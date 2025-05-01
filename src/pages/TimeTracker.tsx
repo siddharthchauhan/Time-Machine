@@ -8,15 +8,9 @@ import NewTaskDialog from "@/components/time-tracker/NewTaskDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 
-// Default projects for demo purposes
-const defaultProjects = [
-  { id: '1', name: 'Website Redesign' },
-  { id: '2', name: 'Mobile App' },
-  { id: '3', name: 'CRM Integration' },
-];
-
 const TimeTracker = () => {
-  const [projects, setProjects] = useState<any[]>(defaultProjects);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<Record<string, any[]>>({});
   const { toast } = useToast();
   const { profile, supabase } = useAuth();
   
@@ -26,12 +20,18 @@ const TimeTracker = () => {
       try {
         const { data, error } = await supabase
           .from('projects')
-          .select('id, name');
+          .select('id, name')
+          .order('name');
           
         if (error) throw error;
         
         if (data && data.length > 0) {
           setProjects(data);
+          
+          // For each project, fetch tasks
+          data.forEach(project => {
+            fetchTasksForProject(project.id);
+          });
         }
       } catch (error: any) {
         console.error('Error fetching projects:', error);
@@ -41,13 +41,40 @@ const TimeTracker = () => {
     fetchProjects();
   }, [supabase]);
   
+  const fetchTasksForProject = async (projectId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('id, name')
+        .eq('project_id', projectId);
+        
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setTasks(prev => ({
+          ...prev,
+          [projectId]: data
+        }));
+      }
+    } catch (error: any) {
+      console.error(`Error fetching tasks for project ${projectId}:`, error);
+    }
+  };
+  
   const handleProjectCreated = (newProject: { id: string; name: string }) => {
     setProjects([...projects, newProject]);
   };
   
   const handleTaskCreated = (newTask: { id: string; name: string; projectId: string }) => {
-    // In a real app, this would update the tasks list
-    // For now we just display a success toast as the tasks are handled in the TimeEntryForm component
+    // Update the tasks state with the new task
+    setTasks(prev => {
+      const projectTasks = prev[newTask.projectId] || [];
+      return {
+        ...prev,
+        [newTask.projectId]: [...projectTasks, { id: newTask.id, name: newTask.name }]
+      };
+    });
+    
     toast({
       title: "Task added",
       description: `${newTask.name} has been added to the selected project`,
@@ -72,7 +99,7 @@ const TimeTracker = () => {
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
-            <TimeEntryForm projects={projects} />
+            <TimeEntryForm projects={projects} tasks={tasks} />
           </div>
           <div className="lg:col-span-2">
             <TimeEntriesList />

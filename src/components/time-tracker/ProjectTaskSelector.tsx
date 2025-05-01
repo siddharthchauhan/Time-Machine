@@ -1,6 +1,7 @@
-
+import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/hooks/use-auth";
 
 type Project = {
   id: string;
@@ -27,8 +28,53 @@ const ProjectTaskSelector = ({
   setSelectedProject,
   selectedTask,
   setSelectedTask,
-  tasks
+  tasks: defaultTasks
 }: ProjectTaskSelectorProps) => {
+  const [projectTasks, setProjectTasks] = useState<Task[]>([]);
+  const { supabase } = useAuth();
+
+  useEffect(() => {
+    if (selectedProject) {
+      fetchTasksForProject(selectedProject);
+    } else {
+      setProjectTasks([]);
+    }
+  }, [selectedProject]);
+
+  const fetchTasksForProject = async (projectId: string) => {
+    try {
+      // First check if we have cached tasks
+      if (defaultTasks && defaultTasks[projectId]) {
+        setProjectTasks(defaultTasks[projectId]);
+        return;
+      }
+
+      // Otherwise fetch from the database
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("id, name")
+        .eq("project_id", projectId);
+
+      if (error) {
+        console.error("Error fetching tasks:", error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setProjectTasks(data);
+      } else {
+        // If no tasks found and we have default tasks, use them
+        if (defaultTasks && defaultTasks[projectId]) {
+          setProjectTasks(defaultTasks[projectId]);
+        } else {
+          setProjectTasks([]);
+        }
+      }
+    } catch (error) {
+      console.error("Error in fetchTasksForProject:", error);
+    }
+  };
+
   return (
     <>
       <div className="space-y-1">
@@ -58,13 +104,13 @@ const ProjectTaskSelector = ({
         <Select 
           value={selectedTask} 
           onValueChange={setSelectedTask}
-          disabled={!selectedProject}
+          disabled={!selectedProject || projectTasks.length === 0}
         >
           <SelectTrigger id="task">
-            <SelectValue placeholder="Select a task" />
+            <SelectValue placeholder={projectTasks.length === 0 ? "No tasks available" : "Select a task"} />
           </SelectTrigger>
           <SelectContent>
-            {selectedProject && tasks[selectedProject as keyof typeof tasks]?.map((task) => (
+            {projectTasks.map((task) => (
               <SelectItem key={task.id} value={task.id}>
                 {task.name}
               </SelectItem>

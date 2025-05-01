@@ -47,7 +47,7 @@ export function useProjects() {
             end_date: project.end_date,
             budget_hours: project.budget_hours,
             budget_amount: project.budget_amount,
-            status: project.status,
+            status: mapStatusToEnum(project.status),
             created_at: project.created_at,
             updated_at: project.updated_at
           }))
@@ -63,6 +63,22 @@ export function useProjects() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Helper function to map string status to enum
+  const mapStatusToEnum = (status: string): "active" | "completed" | "onHold" | "archived" => {
+    switch (status) {
+      case "active":
+        return "active";
+      case "completed":
+        return "completed";
+      case "onHold":
+        return "onHold";
+      case "archived":
+        return "archived";
+      default:
+        return "active"; // Default to active if unknown status
     }
   };
 
@@ -135,6 +151,7 @@ export function useProjects() {
       const newProject: Project = {
         ...data,
         client_name: clientName,
+        status: mapStatusToEnum(data.status),
       };
 
       setProjects([...projects, newProject]);
@@ -197,6 +214,7 @@ export function useProjects() {
       const updatedProject: Project = {
         ...data,
         client_name: clientName,
+        status: mapStatusToEnum(data.status),
       };
 
       setProjects(

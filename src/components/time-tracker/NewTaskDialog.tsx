@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { PlusCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
 type Project = {
   id: string;
@@ -26,8 +27,9 @@ const NewTaskDialog = ({ projects, onTaskCreated }: NewTaskDialogProps) => {
   const [selectedProject, setSelectedProject] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { supabase, profile } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!taskName.trim()) {
@@ -50,16 +52,29 @@ const NewTaskDialog = ({ projects, onTaskCreated }: NewTaskDialogProps) => {
 
     setIsSubmitting(true);
     
-    // In a real app, this would be an API call to create the task
-    // For demo purposes, we're creating a mock task with a random ID
-    setTimeout(() => {
-      const newTask = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: taskName,
-        projectId: selectedProject,
-      };
+    try {
+      // Insert the task into the database
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert({
+          name: taskName,
+          description: taskDescription,
+          project_id: selectedProject,
+          created_by: profile?.id,
+          status: 'pending',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
       
-      onTaskCreated(newTask);
+      if (error) throw error;
+      
+      onTaskCreated({
+        id: data.id,
+        name: data.name,
+        projectId: data.project_id
+      });
       
       toast({
         title: "Task created",
@@ -70,9 +85,16 @@ const NewTaskDialog = ({ projects, onTaskCreated }: NewTaskDialogProps) => {
       setTaskName("");
       setTaskDescription("");
       setSelectedProject("");
-      setIsSubmitting(false);
       setOpen(false);
-    }, 500);
+    } catch (error: any) {
+      toast({
+        title: "Error creating task",
+        description: error.message || "Failed to create task",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
