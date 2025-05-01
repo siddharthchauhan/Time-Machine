@@ -41,3 +41,5 @@ export const KeyboardShortcuts = () => {
     </Collapsible>
   );
 };
+
+export default KeyboardShortcuts;

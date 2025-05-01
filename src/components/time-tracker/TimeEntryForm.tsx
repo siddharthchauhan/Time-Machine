@@ -7,7 +7,7 @@ import DatePicker from "./DatePicker";
 import ProjectTaskSelector from "./ProjectTaskSelector";
 import DescriptionField from "./DescriptionField";
 import TimeTracker from "./TimeTracker";
-import KeyboardShortcuts from "./KeyboardShortcuts";
+import { KeyboardShortcuts } from "./KeyboardShortcuts";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -38,18 +38,33 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
     isTracking,
     trackingDuration,
     isPaused,
-    handleStartTracking,
-    handleStopTracking,
-    handlePauseTracking,
-    resetTracking
+    startTracking,
+    pauseTracking,
+    stopTracking
   } = useTimerControls(validateRequiredFields);
+  
+  const handleStartTracking = () => {
+    startTracking();
+  };
+  
+  const handlePauseTracking = () => {
+    pauseTracking();
+  };
+  
+  const handleStopTracking = () => {
+    const hours = stopTracking();
+    setManualHours(hours);
+  };
   
   const handleReset = () => {
     setSelectedProject('');
     setSelectedTask('');
     setDescription('');
     setManualHours('');
-    resetTracking();
+    
+    if (isTracking) {
+      stopTracking();
+    }
   };
   
   const handleSaveDraft = async () => {
@@ -93,7 +108,7 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
       
       <CardContent className="space-y-4">
         {!isProfileLoaded && (
-          <Alert variant="warning" className="bg-amber-50 border-amber-200">
+          <Alert variant="destructive" className="bg-amber-50 border-amber-200">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
               User profile not available. Please refresh the page to load your profile.
@@ -103,16 +118,16 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
         
         <DatePicker
           date={date}
-          onChange={setDate}
+          setDate={setDate}
         />
         
         <ProjectTaskSelector
           projects={projects}
           tasks={tasks}
           selectedProject={selectedProject}
+          setSelectedProject={setSelectedProject}
           selectedTask={selectedTask}
-          onProjectChange={setSelectedProject}
-          onTaskChange={setSelectedTask}
+          setSelectedTask={setSelectedTask}
           disabled={isTracking}
         />
         
@@ -128,8 +143,8 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
         />
         
         <DescriptionField
-          value={description}
-          onChange={setDescription}
+          description={description}
+          setDescription={setDescription}
         />
         
         <KeyboardShortcuts />

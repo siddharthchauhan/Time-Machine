@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -20,6 +21,7 @@ interface ProjectTaskSelectorProps {
   selectedTask: string;
   setSelectedTask: (value: string) => void;
   tasks: Record<string, Task[]>;
+  disabled?: boolean;
 }
 
 const ProjectTaskSelector = ({
@@ -28,7 +30,8 @@ const ProjectTaskSelector = ({
   setSelectedProject,
   selectedTask,
   setSelectedTask,
-  tasks: defaultTasks
+  tasks: defaultTasks,
+  disabled = false
 }: ProjectTaskSelectorProps) => {
   const [projectTasks, setProjectTasks] = useState<Task[]>([]);
   const { supabase } = useAuth();
@@ -85,6 +88,7 @@ const ProjectTaskSelector = ({
             setSelectedProject(value);
             setSelectedTask('');
           }}
+          disabled={disabled}
         >
           <SelectTrigger id="project">
             <SelectValue placeholder="Select a project" />
@@ -104,7 +108,7 @@ const ProjectTaskSelector = ({
         <Select 
           value={selectedTask} 
           onValueChange={setSelectedTask}
-          disabled={!selectedProject || projectTasks.length === 0}
+          disabled={disabled || !selectedProject || projectTasks.length === 0}
         >
           <SelectTrigger id="task">
             <SelectValue placeholder={projectTasks.length === 0 ? "No tasks available" : "Select a task"} />
