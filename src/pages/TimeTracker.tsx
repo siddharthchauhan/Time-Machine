@@ -32,9 +32,16 @@ const TimeTracker = () => {
           data.forEach(project => {
             fetchTasksForProject(project.id);
           });
+        } else {
+          console.log("No projects found or empty data array");
         }
       } catch (error: any) {
         console.error('Error fetching projects:', error);
+        toast({
+          title: "Error fetching projects",
+          description: error.message || "Failed to load projects",
+          variant: "destructive",
+        });
       }
     };
     
@@ -62,10 +69,12 @@ const TimeTracker = () => {
   };
   
   const handleProjectCreated = (newProject: { id: string; name: string }) => {
+    console.log("Project created:", newProject);
     setProjects([...projects, newProject]);
   };
   
   const handleTaskCreated = (newTask: { id: string; name: string; projectId: string }) => {
+    console.log("Task created:", newTask);
     // Update the tasks state with the new task
     setTasks(prev => {
       const projectTasks = prev[newTask.projectId] || [];

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -97,7 +96,7 @@ const ProjectForm = ({
   const handleSelectChange = (name: string, value: string) => {
     setValues((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: name === "clientId" && value === "none" ? undefined : value,
     }));
   };
 
@@ -179,14 +178,14 @@ const ProjectForm = ({
           <div className="space-y-1">
             <Label htmlFor="clientId">Client</Label>
             <Select
-              value={values.clientId}
+              value={values.clientId || "none"}
               onValueChange={(value) => handleSelectChange("clientId", value)}
             >
               <SelectTrigger id="clientId">
                 <SelectValue placeholder="Select a client" />
               </SelectTrigger>
               <SelectContent>
-                {/* Replace empty string with "none" */}
+                {/* Use "none" instead of empty string */}
                 <SelectItem value="none">None</SelectItem>
                 {clients.map((client) => (
                   <SelectItem key={client.id} value={client.id}>

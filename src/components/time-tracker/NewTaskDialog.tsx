@@ -53,6 +53,21 @@ const NewTaskDialog = ({ projects, onTaskCreated }: NewTaskDialogProps) => {
     setIsSubmitting(true);
     
     try {
+      // Make sure we're not sending "none" as a project ID
+      if (selectedProject === "none") {
+        throw new Error("Invalid project selected");
+      }
+
+      // Validate that the selectedProject is a valid UUID format before inserting
+      if (!isValidUUID(selectedProject)) {
+        throw new Error("Invalid project ID format");
+      }
+
+      // Make sure we have a valid user profile ID
+      if (!profile?.id) {
+        throw new Error("User profile not available");
+      }
+      
       // Insert the task into the database
       const { data, error } = await supabase
         .from('tasks')
@@ -60,7 +75,7 @@ const NewTaskDialog = ({ projects, onTaskCreated }: NewTaskDialogProps) => {
           name: taskName,
           description: taskDescription,
           project_id: selectedProject,
-          created_by: profile?.id,
+          created_by: profile.id,
           status: 'pending',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -92,9 +107,16 @@ const NewTaskDialog = ({ projects, onTaskCreated }: NewTaskDialogProps) => {
         description: error.message || "Failed to create task",
         variant: "destructive",
       });
+      console.error("Task creation error:", error);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Helper function to validate UUID format
+  const isValidUUID = (uuid: string) => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
   };
 
   return (
