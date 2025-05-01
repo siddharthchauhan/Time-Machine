@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, RefreshCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import BasicProjectInfo from "@/components/projects/form/BasicProjectInfo";
 import { ProjectFormValues } from "@/components/projects/ProjectModel";
@@ -20,14 +20,19 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
     status: "active"
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isProfileLoaded, setIsProfileLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const { supabase, profile } = useAuth();
+  const { supabase, profile, isReady } = useAuth();
 
-  // Check if profile is loaded
   useEffect(() => {
-    setIsProfileLoaded(!!profile?.id);
-  }, [profile]);
+    if (open) {
+      setIsLoading(!isReady || !profile?.id);
+    }
+  }, [open, profile, isReady]);
+
+  const handleRefresh = () => {
+    window.location.reload();
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -52,7 +57,7 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
     if (!profile?.id) {
       toast({
         title: "Error creating project",
-        description: "User profile not available. Please try again after refreshing the page.",
+        description: "User profile not available. Please try refreshing the page.",
         variant: "destructive",
       });
       console.error("User profile not available for project creation");
@@ -127,9 +132,19 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
               description={formValues.description || ""}
               onChange={handleChange}
             />
-            {!isProfileLoaded && (
-              <div className="text-sm text-amber-500 bg-amber-50 p-2 rounded">
-                Warning: User profile not detected. You may need to refresh the page.
+            {isLoading && (
+              <div className="text-sm text-amber-500 bg-amber-50 p-3 rounded flex items-center justify-between">
+                <span>Profile data not loaded yet. Please wait or refresh.</span>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRefresh}
+                  className="ml-2 h-7"
+                >
+                  <RefreshCcw className="h-3.5 w-3.5 mr-1" />
+                  Refresh
+                </Button>
               </div>
             )}
           </div>
@@ -142,7 +157,7 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || !isProfileLoaded}>
+            <Button type="submit" disabled={isSubmitting || isLoading}>
               {isSubmitting ? "Creating..." : "Create Project"}
             </Button>
           </DialogFooter>

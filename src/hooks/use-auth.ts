@@ -1,5 +1,5 @@
 
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState, useCallback } from 'react';
 import { AuthContext, UserProfile } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -11,6 +11,34 @@ export const useAuth = () => {
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
+  
+  // Function to force refresh profile data
+  const refreshProfile = useCallback(async () => {
+    if (!context.user?.id) {
+      setIsLoading(false);
+      return null;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', context.user.id)
+        .single();
+        
+      if (error) throw error;
+      
+      console.log("Profile refresh attempt:", data ? "successful" : "not found");
+      return data;
+    } catch (error) {
+      console.error("Error refreshing user profile:", error);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [context.user]);
   
   // Add an additional check to ensure profile is available
   useEffect(() => {
@@ -72,6 +100,7 @@ export const useAuth = () => {
     ...context,
     supabase,
     isReady,
-    isLoading
+    isLoading,
+    refreshProfile
   };
 };

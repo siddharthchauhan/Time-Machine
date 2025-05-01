@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,29 +19,57 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profileAttempted, setProfileAttempted] = useState(false);
+
+  // Function to fetch user profile
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+        
+      if (error) {
+        console.error("Error fetching profile:", error);
+        return null;
+      }
+      
+      console.log("Profile fetched:", data ? "success" : "not found");
+      return data;
+    } catch (error) {
+      console.error("Exception fetching profile:", error);
+      return null;
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
+        console.log("Auth state change:", event);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
         if (currentSession?.user) {
+          // Mark that we've attempted to fetch the profile
+          setProfileAttempted(true);
+          
           // Fetch user profile immediately after auth state change
           try {
-            const { data } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', currentSession.user.id)
-              .single();
+            const profileData = await fetchProfile(currentSession.user.id);
             
-            setProfile(data || { id: currentSession.user.id, full_name: currentSession.user.email });
+            if (profileData) {
+              setProfile(profileData);
+            } else {
+              setProfile({ id: currentSession.user.id, full_name: currentSession.user.email });
+            }
           } catch (error) {
             console.error("Error fetching profile in auth state change:", error);
           }
         } else {
           setProfile(null);
+          setProfileAttempted(false);
         }
       }
     );
@@ -54,13 +83,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(currentSession?.user ?? null);
         
         if (currentSession?.user) {
-          const { data } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', currentSession.user.id)
-            .single();
+          setProfileAttempted(true);
+          const profileData = await fetchProfile(currentSession.user.id);
           
-          setProfile(data || { id: currentSession.user.id, full_name: currentSession.user.email });
+          if (profileData) {
+            setProfile(profileData);
+          } else {
+            // Create a minimal profile if not found
+            setProfile({ id: currentSession.user.id, full_name: currentSession.user.email });
+          }
         }
       } catch (error) {
         console.error("Error initializing auth:", error);
