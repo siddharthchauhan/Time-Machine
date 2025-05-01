@@ -33,7 +33,7 @@ const ThemeSelector = ({ onThemeChange }: ThemeSelectorProps) => {
         className={`relative aspect-video cursor-pointer rounded-lg overflow-hidden hover:border-primary transition-all ${theme === 'dark' ? 'border-2 border-primary' : 'border border-white/10'}`}
         onClick={() => handleThemeChange("dark")}
       >
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gray-950">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black">
           <Moon className="h-5 w-5 text-white" />
           <span className="text-sm font-medium text-white">Dark</span>
         </div>
@@ -42,7 +42,7 @@ const ThemeSelector = ({ onThemeChange }: ThemeSelectorProps) => {
         className={`relative aspect-video cursor-pointer rounded-lg overflow-hidden hover:border-primary transition-all ${theme === 'system' ? 'border-2 border-primary' : 'border border-white/10'}`}
         onClick={() => handleThemeChange("system")}
       >
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-r from-white to-gray-950">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-r from-white to-black">
           <Laptop className="h-5 w-5" />
           <span className="text-sm font-medium">System</span>
         </div>
