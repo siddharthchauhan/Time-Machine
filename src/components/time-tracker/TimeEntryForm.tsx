@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useTimeEntryForm, useTimerControls } from "./hooks";
+import { useTimeEntry } from "./hooks";
 import DatePicker from "./DatePicker";
 import ProjectTaskSelector from "./ProjectTaskSelector";
 import DescriptionField from "./DescriptionField";
@@ -30,45 +30,21 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
     setManualHours,
     isSubmitting,
     isProfileLoaded,
-    validateRequiredFields,
-    saveTimeEntry
-  } = useTimeEntryForm();
-  
-  const {
     isTracking,
     trackingDuration,
     isPaused,
-    startTracking,
-    pauseTracking,
-    stopTracking
-  } = useTimerControls();
+    handleStartTracking,
+    handlePauseTracking,
+    handleStopTracking,
+    handleSubmit,
+    handleSubmitForApproval,
+    handleReset
+  } = useTimeEntry(tasks);
   
-  const handleStartTracking = () => {
-    if (validateRequiredFields()) {
-      startTracking();
-    }
+  const handleRefreshPage = () => {
+    window.location.reload();
   };
-  
-  const handlePauseTracking = () => {
-    pauseTracking();
-  };
-  
-  const handleStopTracking = () => {
-    const hours = stopTracking();
-    setManualHours(hours);
-  };
-  
-  const handleReset = () => {
-    setSelectedProject('');
-    setSelectedTask('');
-    setDescription('');
-    setManualHours('');
-    
-    if (isTracking) {
-      stopTracking();
-    }
-  };
-  
+
   const handleSaveDraft = async () => {
     const hours = isTracking 
       ? Number((trackingDuration / 3600).toFixed(2))
@@ -78,29 +54,7 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
       return;
     }
     
-    const success = await saveTimeEntry(hours, 'draft');
-    if (success) {
-      handleReset();
-    }
-  };
-  
-  const handleSubmit = async () => {
-    const hours = isTracking 
-      ? Number((trackingDuration / 3600).toFixed(2))
-      : Number(manualHours);
-      
-    if (hours <= 0) {
-      return;
-    }
-    
-    const success = await saveTimeEntry(hours, 'submitted');
-    if (success) {
-      handleReset();
-    }
-  };
-
-  const handleRefreshPage = () => {
-    window.location.reload();
+    const success = await handleSubmit({} as React.FormEvent);
   };
 
   return (
@@ -183,7 +137,7 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
             Save as Draft
           </Button>
           <Button 
-            onClick={handleSubmit} 
+            onClick={handleSubmitForApproval} 
             disabled={isSubmitting || isTracking || (!isTracking && Number(manualHours) <= 0) || !isProfileLoaded}
           >
             Submit for Approval

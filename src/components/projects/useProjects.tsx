@@ -96,7 +96,7 @@ export function useProjects() {
           end_date: values.endDate,
           budget_hours: values.budgetHours,
           budget_amount: values.budgetAmount,
-          status: values.status as "active" | "completed" | "onHold" | "archived",
+          status: values.status,
           created_by: profile?.id,
           updated_at: new Date().toISOString(),
         })

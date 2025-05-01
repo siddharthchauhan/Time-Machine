@@ -17,6 +17,7 @@ export function useTimeEntry(availableTasks: Record<string, Task[]>) {
     manualHours,
     setManualHours,
     isSubmitting,
+    isProfileLoaded,
     validateRequiredFields,
     saveTimeEntry
   } = useTimeEntryForm();
@@ -32,8 +33,8 @@ export function useTimeEntry(availableTasks: Record<string, Task[]>) {
   } = useTimerControls();
 
   const handleStartTracking = () => {
-    if (startTracking(validateRequiredFields)) {
-      // Timer started successfully
+    if (validateRequiredFields()) {
+      startTracking();
     }
   };
 
@@ -107,6 +108,7 @@ export function useTimeEntry(availableTasks: Record<string, Task[]>) {
     setManualHours,
     trackingDuration,
     isSubmitting,
+    isProfileLoaded,
     handleStartTracking,
     handlePauseTracking,
     handleStopTracking,

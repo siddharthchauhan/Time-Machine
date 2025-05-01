@@ -73,7 +73,7 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
         .insert({
           name: formValues.name,
           description: formValues.description || null,
-          status: 'active',
+          status: 'active' as "active" | "completed" | "onHold" | "archived",
           created_by: profile.id,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
