@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,7 +59,20 @@ const ProjectForm = ({
 
         if (error) throw error;
 
-        setClients(data || []);
+        // Map the response data to Client type
+        const clientsData = data?.map(client => ({
+          id: client.id,
+          name: client.name,
+          contact_name: client.contact_name,
+          contact_email: client.contact_email,
+          contact_phone: client.contact_phone,
+          address: client.address,
+          billing_rate: client.billing_rate,
+          created_at: client.created_at,
+          updated_at: client.updated_at
+        })) || [];
+
+        setClients(clientsData);
       } catch (error: any) {
         console.error("Error fetching clients:", error);
       }

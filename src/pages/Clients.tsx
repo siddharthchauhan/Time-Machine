@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -38,7 +37,19 @@ const Clients = () => {
 
         if (error) throw error;
 
-        const clientsData = data || [];
+        // Map the response data to Client type
+        const clientsData = data?.map(client => ({
+          id: client.id,
+          name: client.name,
+          contact_name: client.contact_name,
+          contact_email: client.contact_email,
+          contact_phone: client.contact_phone,
+          address: client.address,
+          billing_rate: client.billing_rate,
+          created_at: client.created_at,
+          updated_at: client.updated_at
+        })) || [];
+
         setClients(clientsData);
         setFilteredClients(clientsData);
       } catch (error: any) {
@@ -95,7 +106,20 @@ const Clients = () => {
 
       if (error) throw error;
 
-      setClients([...clients, data as Client]);
+      // Convert the response data to Client type
+      const newClient: Client = {
+        id: data.id,
+        name: data.name,
+        contact_name: data.contact_name,
+        contact_email: data.contact_email,
+        contact_phone: data.contact_phone,
+        address: data.address,
+        billing_rate: data.billing_rate,
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      };
+
+      setClients([...clients, newClient]);
       toast({
         title: "Client created",
         description: `${values.name} has been created successfully`,

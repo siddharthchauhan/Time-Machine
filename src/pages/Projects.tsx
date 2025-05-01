@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -18,6 +17,7 @@ import { Plus, Pencil, Archive, BarChart3, Calendar, Clock, CircleDollarSign } f
 import { Project, ProjectFormValues } from "@/components/projects/ProjectModel";
 import ProjectForm from "@/components/projects/ProjectForm";
 import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 
 const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -48,10 +48,21 @@ const Projects = () => {
 
         if (error) throw error;
 
+        // Map the response data to Project type
         const projectsData = data
           ? data.map((project) => ({
-              ...project,
+              id: project.id,
+              name: project.name,
+              description: project.description,
+              client_id: project.client_id,
               client_name: project.clients?.name,
+              start_date: project.start_date,
+              end_date: project.end_date,
+              budget_hours: project.budget_hours,
+              budget_amount: project.budget_amount,
+              status: project.status,
+              created_at: project.created_at,
+              updated_at: project.updated_at
             }))
           : [];
 
