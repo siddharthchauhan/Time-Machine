@@ -2,11 +2,10 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { PlusCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import BasicProjectInfo from "@/components/projects/form/BasicProjectInfo";
+import { ProjectFormValues } from "@/components/projects/ProjectModel";
 
 type NewProjectDialogProps = {
   onProjectCreated: (project: { id: string; name: string }) => void;
@@ -14,15 +13,26 @@ type NewProjectDialogProps = {
 
 const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
   const [open, setOpen] = useState(false);
-  const [projectName, setProjectName] = useState("");
-  const [projectDescription, setProjectDescription] = useState("");
+  const [formValues, setFormValues] = useState<ProjectFormValues>({
+    name: "",
+    description: "",
+    status: "active"
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormValues((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!projectName.trim()) {
+    if (!formValues.name.trim()) {
       toast({
         title: "Project name required",
         description: "Please enter a project name",
@@ -38,19 +48,22 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
     setTimeout(() => {
       const newProject = {
         id: Math.random().toString(36).substr(2, 9),
-        name: projectName,
+        name: formValues.name,
       };
       
       onProjectCreated(newProject);
       
       toast({
         title: "Project created",
-        description: `${projectName} has been created successfully`,
+        description: `${formValues.name} has been created successfully`,
       });
       
       // Reset form
-      setProjectName("");
-      setProjectDescription("");
+      setFormValues({
+        name: "",
+        description: "",
+        status: "active"
+      });
       setIsSubmitting(false);
       setOpen(false);
     }, 500);
@@ -70,25 +83,11 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
             <DialogTitle>Create New Project</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="project-name">Project Name</Label>
-              <Input
-                id="project-name"
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
-                placeholder="Enter project name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="project-description">Description (optional)</Label>
-              <Textarea
-                id="project-description"
-                value={projectDescription}
-                onChange={(e) => setProjectDescription(e.target.value)}
-                placeholder="Describe the project..."
-                rows={3}
-              />
-            </div>
+            <BasicProjectInfo
+              name={formValues.name}
+              description={formValues.description}
+              onChange={handleChange}
+            />
           </div>
           <DialogFooter>
             <Button 
