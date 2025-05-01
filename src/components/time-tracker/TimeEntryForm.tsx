@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,10 +40,12 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
     startTracking,
     pauseTracking,
     stopTracking
-  } = useTimerControls(validateRequiredFields);
+  } = useTimerControls();
   
   const handleStartTracking = () => {
-    startTracking();
+    if (validateRequiredFields()) {
+      startTracking();
+    }
   };
   
   const handlePauseTracking = () => {
