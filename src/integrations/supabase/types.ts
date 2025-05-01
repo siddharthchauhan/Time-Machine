@@ -119,30 +119,55 @@ export type Database = {
       }
       projects: {
         Row: {
+          budget_amount: number | null
+          budget_hours: number | null
+          client_id: string | null
           created_at: string
           created_by: string
           description: string | null
+          end_date: string | null
           id: string
           name: string
+          start_date: string | null
+          status: string
           updated_at: string
         }
         Insert: {
+          budget_amount?: number | null
+          budget_hours?: number | null
+          client_id?: string | null
           created_at?: string
           created_by: string
           description?: string | null
+          end_date?: string | null
           id?: string
           name: string
+          start_date?: string | null
+          status?: string
           updated_at?: string
         }
         Update: {
+          budget_amount?: number | null
+          budget_hours?: number | null
+          client_id?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
+          end_date?: string | null
           id?: string
           name?: string
+          start_date?: string | null
+          status?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "projects_created_by_fkey"
             columns: ["created_by"]
