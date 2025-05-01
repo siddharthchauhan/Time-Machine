@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import ProjectTaskSelector from "./ProjectTaskSelector";
 import DescriptionField from "./DescriptionField";
 import TimeTracker from "./TimeTracker";
 import { KeyboardShortcuts } from "./KeyboardShortcuts";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface TimeEntryFormProps {
@@ -98,6 +99,10 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
     }
   };
 
+  const handleRefreshPage = () => {
+    window.location.reload();
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -111,8 +116,16 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
         {!isProfileLoaded && (
           <Alert variant="destructive" className="bg-amber-50 border-amber-200">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              User profile not available. Please refresh the page to load your profile.
+            <AlertDescription className="flex justify-between items-center">
+              <span>User profile not available. Please refresh the page to load your profile.</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="ml-2 bg-white" 
+                onClick={handleRefreshPage}
+              >
+                <RefreshCw className="h-3.5 w-3.5 mr-1" /> Refresh
+              </Button>
             </AlertDescription>
           </Alert>
         )}

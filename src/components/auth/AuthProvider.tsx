@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,16 +27,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(currentSession?.user ?? null);
         
         if (currentSession?.user) {
-          // Fetch user profile separately
-          setTimeout(async () => {
+          // Fetch user profile immediately after auth state change
+          try {
             const { data } = await supabase
               .from('profiles')
               .select('*')
               .eq('id', currentSession.user.id)
               .single();
             
-            setProfile(data || { full_name: currentSession.user.email });
-          }, 0);
+            setProfile(data || { id: currentSession.user.id, full_name: currentSession.user.email });
+          } catch (error) {
+            console.error("Error fetching profile in auth state change:", error);
+          }
         } else {
           setProfile(null);
         }
@@ -45,24 +46,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     );
 
     // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      
-      if (currentSession?.user) {
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', currentSession.user.id)
-          .single()
-          .then(({ data }) => {
-            setProfile(data || { full_name: currentSession.user.email });
-            setIsLoading(false);
-          });
-      } else {
+    const initializeAuth = async () => {
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        
+        if (currentSession?.user) {
+          const { data } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', currentSession.user.id)
+            .single();
+          
+          setProfile(data || { id: currentSession.user.id, full_name: currentSession.user.email });
+        }
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+      } finally {
         setIsLoading(false);
       }
-    });
+    };
+
+    initializeAuth();
 
     return () => {
       subscription.unsubscribe();

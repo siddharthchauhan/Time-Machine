@@ -7,47 +7,54 @@ import NewProjectDialog from "@/components/time-tracker/NewProjectDialog";
 import NewTaskDialog from "@/components/time-tracker/NewTaskDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const TimeTracker = () => {
   const [projects, setProjects] = useState<any[]>([]);
   const [tasks, setTasks] = useState<Record<string, any[]>>({});
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const { toast } = useToast();
-  const { profile, supabase } = useAuth();
+  const { profile, supabase, isReady } = useAuth();
   
   useEffect(() => {
-    // Fetch actual projects from Supabase
-    const fetchProjects = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('projects')
-          .select('id, name')
-          .order('name');
+    // Only fetch projects when the profile is loaded
+    if (isReady && profile?.id) {
+      fetchProjects();
+    }
+  }, [isReady, profile]);
+  
+  const fetchProjects = async () => {
+    setIsLoadingProjects(true);
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('id, name')
+        .order('name');
           
-        if (error) throw error;
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        console.log("Fetched projects:", data.length);
+        setProjects(data);
         
-        if (data && data.length > 0) {
-          console.log("Fetched projects:", data);
-          setProjects(data);
-          
-          // For each project, fetch tasks
-          data.forEach(project => {
-            fetchTasksForProject(project.id);
-          });
-        } else {
-          console.log("No projects found or empty data array");
-        }
-      } catch (error: any) {
-        console.error('Error fetching projects:', error);
-        toast({
-          title: "Error fetching projects",
-          description: error.message || "Failed to load projects",
-          variant: "destructive",
+        // For each project, fetch tasks
+        data.forEach(project => {
+          fetchTasksForProject(project.id);
         });
+      } else {
+        console.log("No projects found or empty data array");
       }
-    };
-    
-    fetchProjects();
-  }, [supabase]);
+    } catch (error: any) {
+      console.error('Error fetching projects:', error);
+      toast({
+        title: "Error fetching projects",
+        description: error.message || "Failed to load projects",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingProjects(false);
+    }
+  };
   
   const fetchTasksForProject = async (projectId: string) => {
     if (!projectId) {
@@ -67,7 +74,7 @@ const TimeTracker = () => {
       }
       
       if (data && data.length > 0) {
-        console.log(`Tasks for project ${projectId}:`, data);
+        console.log(`Tasks for project ${projectId}:`, data.length);
         setTasks(prev => ({
           ...prev,
           [projectId]: data
@@ -81,6 +88,10 @@ const TimeTracker = () => {
   const handleProjectCreated = (newProject: { id: string; name: string }) => {
     console.log("Project created:", newProject);
     setProjects(prevProjects => [...prevProjects, newProject]);
+    toast({
+      title: "Project created",
+      description: `${newProject.name} has been successfully added`,
+    });
   };
   
   const handleTaskCreated = (newTask: { id: string; name: string; projectId: string }) => {
@@ -118,7 +129,11 @@ const TimeTracker = () => {
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
-            <TimeEntryForm projects={projects} tasks={tasks} />
+            {isLoadingProjects ? (
+              <Skeleton className="w-full h-[500px] rounded-lg" />
+            ) : (
+              <TimeEntryForm projects={projects} tasks={tasks} />
+            )}
           </div>
           <div className="lg:col-span-2">
             <TimeEntriesList />

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -12,14 +12,18 @@ export const useTimeEntryForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isProfileLoaded, setIsProfileLoaded] = useState(false);
   const { toast } = useToast();
-  const { profile, supabase } = useAuth();
+  const { profile, supabase, isReady } = useAuth();
   
   // Check if profile is loaded
   useEffect(() => {
-    setIsProfileLoaded(!!profile?.id);
-  }, [profile]);
+    setIsProfileLoaded(isReady && !!profile?.id);
+    
+    if (isReady && profile?.id) {
+      console.log("Profile loaded successfully:", profile.id);
+    }
+  }, [isReady, profile]);
 
-  const validateRequiredFields = () => {
+  const validateRequiredFields = useCallback(() => {
     if (!selectedProject || !selectedTask) {
       toast({
         title: "Required fields missing",
@@ -28,8 +32,18 @@ export const useTimeEntryForm = () => {
       });
       return false;
     }
+    
+    if (!isProfileLoaded) {
+      toast({
+        title: "Profile not loaded",
+        description: "Your user profile is not available. Please refresh the page.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
     return true;
-  };
+  }, [selectedProject, selectedTask, toast, isProfileLoaded]);
 
   const saveTimeEntry = async (hours: number, status: 'draft' | 'submitted'): Promise<boolean> => {
     if (!selectedProject || !selectedTask || !hours) {
@@ -82,6 +96,7 @@ export const useTimeEntryForm = () => {
       
       return true;
     } catch (error: any) {
+      console.error("Error saving time entry:", error);
       toast({
         title: `Error ${status === 'draft' ? 'saving' : 'submitting'} time entry`,
         description: error.message,
