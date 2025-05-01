@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import TimeEntryHeader from "./TimeEntryHeader";
@@ -10,6 +10,7 @@ import DatePicker from "./DatePicker";
 import TimeTracker from "./TimeTracker";
 import DescriptionField from "./DescriptionField";
 import TimeEntryActions from "./TimeEntryActions";
+import { KeyboardShortcuts } from "./KeyboardShortcuts";
 
 // Default tasks data structure
 const defaultTasks = {
@@ -49,6 +50,7 @@ const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
 
   const [date, setDate] = useState<Date>(new Date());
   const [isTracking, setIsTracking] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [selectedProject, setSelectedProject] = useState('');
   const [selectedTask, setSelectedTask] = useState('');
   const [description, setDescription] = useState('');
@@ -57,6 +59,7 @@ const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
   const [trackingStartTime, setTrackingStartTime] = useState<Date | null>(null);
   const { toast } = useToast();
   const { profile, supabase } = useAuth();
+  const intervalIdRef = useRef<number | null>(null);
   
   // Create a tasks variable using the defaultTasks
   const tasks = defaultTasks;
@@ -81,20 +84,55 @@ const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
     
     setTrackingStartTime(new Date());
     setIsTracking(true);
+    setIsPaused(false);
     
-    const intervalId = setInterval(() => {
+    const intervalId = window.setInterval(() => {
       setTrackingDuration(prev => prev + 1);
     }, 1000);
     
+    intervalIdRef.current = intervalId;
     document.documentElement.setAttribute('data-timer-id', intervalId.toString());
+  };
+
+  const handlePauseTracking = () => {
+    if (isPaused) {
+      // Resume tracking
+      setIsPaused(false);
+      
+      const intervalId = window.setInterval(() => {
+        setTrackingDuration(prev => prev + 1);
+      }, 1000);
+      
+      intervalIdRef.current = intervalId;
+      document.documentElement.setAttribute('data-timer-id', intervalId.toString());
+      
+      toast({
+        title: "Timer resumed",
+        description: "Time tracking has been resumed",
+      });
+    } else {
+      // Pause tracking
+      setIsPaused(true);
+      
+      if (intervalIdRef.current) {
+        clearInterval(intervalIdRef.current);
+        intervalIdRef.current = null;
+      }
+      
+      toast({
+        title: "Timer paused",
+        description: "Time tracking has been paused",
+      });
+    }
   };
 
   const handleStopTracking = () => {
     setIsTracking(false);
+    setIsPaused(false);
     
-    const intervalId = document.documentElement.getAttribute('data-timer-id');
-    if (intervalId) {
-      clearInterval(parseInt(intervalId));
+    if (intervalIdRef.current) {
+      clearInterval(intervalIdRef.current);
+      intervalIdRef.current = null;
     }
     
     const hours = trackingDuration / 3600;
@@ -224,7 +262,56 @@ const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
     setManualHours('');
     setTrackingDuration(0);
     setIsTracking(false);
+    setIsPaused(false);
+    
+    if (intervalIdRef.current) {
+      clearInterval(intervalIdRef.current);
+      intervalIdRef.current = null;
+    }
   };
+
+  // Set up keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only process shortcuts when not in an input field
+      if (
+        document.activeElement instanceof HTMLInputElement ||
+        document.activeElement instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      // Alt+S to start/stop timer
+      if (e.altKey && e.key === 's') {
+        e.preventDefault();
+        if (isTracking) {
+          handleStopTracking();
+        } else {
+          handleStartTracking();
+        }
+      }
+
+      // Alt+P to pause/resume timer
+      if (e.altKey && e.key === 'p' && isTracking) {
+        e.preventDefault();
+        handlePauseTracking();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isTracking, isPaused]);
+
+  // Clean up interval on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalIdRef.current) {
+        clearInterval(intervalIdRef.current);
+      }
+    };
+  }, []);
 
   return (
     <Card>
@@ -247,17 +334,21 @@ const TimeEntryForm = ({ projects = [] }: TimeEntryFormProps) => {
           
           <TimeTracker 
             isTracking={isTracking}
+            isPaused={isPaused}
             trackingDuration={trackingDuration}
             manualHours={manualHours}
             setManualHours={setManualHours}
             handleStartTracking={handleStartTracking}
             handleStopTracking={handleStopTracking}
+            handlePauseTracking={handlePauseTracking}
           />
           
           <DescriptionField 
             description={description}
             setDescription={setDescription}
           />
+          
+          <KeyboardShortcuts />
         </CardContent>
         
         <CardFooter className="flex flex-col items-start gap-3">

@@ -1,42 +1,50 @@
 
-import { 
-  Clock, 
-  LayoutDashboard, 
-  ClipboardCheck, 
-  Users, 
-  BarChart4, 
-  Settings
-} from 'lucide-react';
+import { Clock, FileCheck, BarChart3, Users, Settings, User, Timer, Home, Briefcase, FolderKanban } from "lucide-react";
 
 export const navItems = [
   {
-    path: '/',
-    label: 'Dashboard',
-    icon: LayoutDashboard
+    label: "Dashboard",
+    path: "/",
+    icon: Home,
   },
   {
-    path: '/time-tracker',
-    label: 'Time Tracker',
-    icon: Clock
+    label: "Time Tracker",
+    path: "/time-tracker",
+    icon: Timer,
   },
   {
-    path: '/approvals',
-    label: 'Approvals',
-    icon: ClipboardCheck
+    label: "Projects",
+    path: "/projects",
+    icon: FolderKanban,
   },
   {
-    path: '/team',
-    label: 'Team',
-    icon: Users
+    label: "Clients",
+    path: "/clients",
+    icon: Briefcase,
   },
   {
-    path: '/reports',
-    label: 'Reports',
-    icon: BarChart4
+    label: "Approvals",
+    path: "/approvals",
+    icon: FileCheck,
   },
   {
-    path: '/settings',
-    label: 'Settings',
-    icon: Settings
-  }
+    label: "Team",
+    path: "/team",
+    icon: Users,
+  },
+  {
+    label: "Reports",
+    path: "/reports",
+    icon: BarChart3,
+  },
+  {
+    label: "Settings",
+    path: "/settings",
+    icon: Settings,
+  },
+  {
+    label: "Profile",
+    path: "/profile",
+    icon: User,
+  },
 ];
