@@ -6,6 +6,7 @@ import { PlusCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import BasicProjectInfo from "@/components/projects/form/BasicProjectInfo";
 import { ProjectFormValues } from "@/components/projects/ProjectModel";
+import { useAuth } from "@/hooks/use-auth";
 
 type NewProjectDialogProps = {
   onProjectCreated: (project: { id: string; name: string }) => void;
@@ -20,6 +21,7 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { supabase, profile } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -29,7 +31,7 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formValues.name.trim()) {
@@ -43,15 +45,33 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
 
     setIsSubmitting(true);
     
-    // In a real app, this would be an API call to create the project
-    // For demo purposes, we're creating a mock project with a random ID
-    setTimeout(() => {
-      const newProject = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: formValues.name,
-      };
+    try {
+      // Make sure we have a valid user profile ID
+      if (!profile?.id) {
+        throw new Error("User profile not available");
+      }
       
-      onProjectCreated(newProject);
+      // Insert the project into the database
+      const { data, error } = await supabase
+        .from('projects')
+        .insert({
+          name: formValues.name,
+          description: formValues.description,
+          status: 'active',
+          created_by: profile.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Notify the parent component about the new project
+      onProjectCreated({
+        id: data.id,
+        name: data.name,
+      });
       
       toast({
         title: "Project created",
@@ -64,9 +84,17 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
         description: "",
         status: "active"
       });
-      setIsSubmitting(false);
       setOpen(false);
-    }, 500);
+    } catch (error: any) {
+      toast({
+        title: "Error creating project",
+        description: error.message || "Failed to create project",
+        variant: "destructive",
+      });
+      console.error("Project creation error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

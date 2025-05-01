@@ -26,6 +26,7 @@ const TimeTracker = () => {
         if (error) throw error;
         
         if (data && data.length > 0) {
+          console.log("Fetched projects:", data);
           setProjects(data);
           
           // For each project, fetch tasks
@@ -49,15 +50,24 @@ const TimeTracker = () => {
   }, [supabase]);
   
   const fetchTasksForProject = async (projectId: string) => {
+    if (!projectId) {
+      console.warn("Attempted to fetch tasks with invalid projectId:", projectId);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('tasks')
         .select('id, name')
         .eq('project_id', projectId);
         
-      if (error) throw error;
+      if (error) {
+        console.error(`Error fetching tasks for project ${projectId}:`, error);
+        return;
+      }
       
       if (data && data.length > 0) {
+        console.log(`Tasks for project ${projectId}:`, data);
         setTasks(prev => ({
           ...prev,
           [projectId]: data
@@ -70,7 +80,7 @@ const TimeTracker = () => {
   
   const handleProjectCreated = (newProject: { id: string; name: string }) => {
     console.log("Project created:", newProject);
-    setProjects([...projects, newProject]);
+    setProjects(prevProjects => [...prevProjects, newProject]);
   };
   
   const handleTaskCreated = (newTask: { id: string; name: string; projectId: string }) => {
