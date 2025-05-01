@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/form";
 import { useAuth } from "./AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
+import { Lock, Mail, User } from "lucide-react";
 
 const formSchema = z.object({
   fullName: z.string().min(2, { message: "Full name must be at least 2 characters" }),
@@ -66,57 +67,86 @@ export default function SignupForm() {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 w-full max-w-md">
-        <FormField
-          control={form.control}
-          name="fullName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Full Name</FormLabel>
-              <FormControl>
-                <Input placeholder="John Doe" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input placeholder="you@example.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Creating account..." : "Sign up"}
-        </Button>
-        <div className="text-center text-sm">
-          Already have an account?{" "}
-          <Link to="/auth" className="text-primary font-medium hover:underline">
-            Login
-          </Link>
-        </div>
-      </form>
-    </Form>
+    <div className="animate-fade-in">
+      <div className="mb-8 text-center">
+        <h1 className="text-3xl font-bold mb-2">Create an account</h1>
+        <p className="text-muted-foreground">Enter your information to get started</p>
+      </div>
+      
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 w-full max-w-md">
+          <FormField
+            control={form.control}
+            name="fullName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-foreground/70">Full Name</FormLabel>
+                <div className="relative">
+                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <FormControl>
+                    <Input 
+                      placeholder="John Doe" 
+                      className="pl-10 bg-secondary/50 border-white/10 focus:border-primary" 
+                      {...field} 
+                    />
+                  </FormControl>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-foreground/70">Email</FormLabel>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <FormControl>
+                    <Input 
+                      placeholder="you@example.com" 
+                      className="pl-10 bg-secondary/50 border-white/10 focus:border-primary" 
+                      {...field} 
+                    />
+                  </FormControl>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-foreground/70">Password</FormLabel>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <FormControl>
+                    <Input 
+                      type="password" 
+                      placeholder="••••••••" 
+                      className="pl-10 bg-secondary/50 border-white/10 focus:border-primary" 
+                      {...field} 
+                    />
+                  </FormControl>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Creating account..." : "Sign Up"}
+          </Button>
+          <div className="text-center text-sm mt-6">
+            Already have an account?{" "}
+            <Link to="/auth" className="text-primary font-medium hover:underline">
+              Sign in
+            </Link>
+          </div>
+        </form>
+      </Form>
+    </div>
   );
 }

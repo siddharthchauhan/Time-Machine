@@ -23,25 +23,27 @@ const App = () => (
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <ThemeProvider defaultTheme="light">
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AuthProvider>
-              <Routes>
-                <Route path="/auth/*" element={<Auth />} />
-                
-                <Route path="/" element={<RequireAuth><Index /></RequireAuth>} />
-                <Route path="/time-tracker" element={<RequireAuth><TimeTracker /></RequireAuth>} />
-                <Route path="/approvals" element={<RequireAuth><Approvals /></RequireAuth>} />
-                <Route path="/team" element={<RequireAuth><Team /></RequireAuth>} />
-                <Route path="/reports" element={<RequireAuth><Reports /></RequireAuth>} />
-                <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
-                <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </AuthProvider>
-          </BrowserRouter>
+        <ThemeProvider defaultTheme="dark">
+          <div className="gradient-bg">
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AuthProvider>
+                <Routes>
+                  <Route path="/auth/*" element={<Auth />} />
+                  
+                  <Route path="/" element={<RequireAuth><Index /></RequireAuth>} />
+                  <Route path="/time-tracker" element={<RequireAuth><TimeTracker /></RequireAuth>} />
+                  <Route path="/approvals" element={<RequireAuth><Approvals /></RequireAuth>} />
+                  <Route path="/team" element={<RequireAuth><Team /></RequireAuth>} />
+                  <Route path="/reports" element={<RequireAuth><Reports /></RequireAuth>} />
+                  <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
+                  <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </AuthProvider>
+            </BrowserRouter>
+          </div>
         </ThemeProvider>
       </TooltipProvider>
     </QueryClientProvider>

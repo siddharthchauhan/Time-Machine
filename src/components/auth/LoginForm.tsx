@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/form";
 import { useAuth } from "./AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
+import { Lock, Mail } from "lucide-react";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -64,44 +65,66 @@ export default function LoginForm() {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 w-full max-w-md">
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input placeholder="you@example.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Logging in..." : "Login"}
-        </Button>
-        <div className="text-center text-sm">
-          Don't have an account?{" "}
-          <Link to="/auth/signup" className="text-primary font-medium hover:underline">
-            Sign up
-          </Link>
-        </div>
-      </form>
-    </Form>
+    <div className="animate-fade-in">
+      <div className="mb-8 text-center">
+        <h1 className="text-3xl font-bold mb-2">Welcome back</h1>
+        <p className="text-muted-foreground">Enter your credentials to access your account</p>
+      </div>
+      
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 w-full max-w-md">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-foreground/70">Email</FormLabel>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <FormControl>
+                    <Input 
+                      placeholder="you@example.com" 
+                      className="pl-10 bg-secondary/50 border-white/10 focus:border-primary" 
+                      {...field} 
+                    />
+                  </FormControl>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-foreground/70">Password</FormLabel>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <FormControl>
+                    <Input 
+                      type="password" 
+                      placeholder="••••••••" 
+                      className="pl-10 bg-secondary/50 border-white/10 focus:border-primary" 
+                      {...field} 
+                    />
+                  </FormControl>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Logging in..." : "Sign In"}
+          </Button>
+          <div className="text-center text-sm mt-6">
+            Don't have an account?{" "}
+            <Link to="/auth/signup" className="text-primary font-medium hover:underline">
+              Create an account
+            </Link>
+          </div>
+        </form>
+      </Form>
+    </div>
   );
 }

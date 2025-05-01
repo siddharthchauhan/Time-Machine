@@ -19,9 +19,9 @@ const ThemeSelector = ({ onThemeChange }: ThemeSelectorProps) => {
   };
 
   return (
-    <div className="grid grid-cols-3 gap-4">
+    <div className="grid grid-cols-3 gap-4 animate-fade-in">
       <Card 
-        className={`relative aspect-video cursor-pointer rounded-md overflow-hidden hover:border-primary ${theme === 'light' ? 'border-2 border-primary' : 'border-2 border-muted'}`}
+        className={`relative aspect-video cursor-pointer rounded-lg overflow-hidden hover:border-primary transition-all ${theme === 'light' ? 'border-2 border-primary' : 'border border-white/10'}`}
         onClick={() => handleThemeChange("light")}
       >
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white">
@@ -30,7 +30,7 @@ const ThemeSelector = ({ onThemeChange }: ThemeSelectorProps) => {
         </div>
       </Card>
       <Card 
-        className={`relative aspect-video cursor-pointer rounded-md overflow-hidden hover:border-primary ${theme === 'dark' ? 'border-2 border-primary' : 'border-2 border-muted'}`}
+        className={`relative aspect-video cursor-pointer rounded-lg overflow-hidden hover:border-primary transition-all ${theme === 'dark' ? 'border-2 border-primary' : 'border border-white/10'}`}
         onClick={() => handleThemeChange("dark")}
       >
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gray-950">
@@ -39,7 +39,7 @@ const ThemeSelector = ({ onThemeChange }: ThemeSelectorProps) => {
         </div>
       </Card>
       <Card 
-        className={`relative aspect-video cursor-pointer rounded-md overflow-hidden hover:border-primary ${theme === 'system' ? 'border-2 border-primary' : 'border-2 border-muted'}`}
+        className={`relative aspect-video cursor-pointer rounded-lg overflow-hidden hover:border-primary transition-all ${theme === 'system' ? 'border-2 border-primary' : 'border border-white/10'}`}
         onClick={() => handleThemeChange("system")}
       >
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-r from-white to-gray-950">

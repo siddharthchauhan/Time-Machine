@@ -5,83 +5,84 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%; /* Pure White */
-    --foreground: 0 0% 0%; /* Pure Black */
+    /* Modern dark theme inspired by the reference site */
+    --background: 225 25% 7%;
+    --foreground: 210 20% 98%;
     
-    --card: 0 0% 100%; /* Pure White */
-    --card-foreground: 0 0% 0%; /* Pure Black */
+    --card: 225 25% 9%;
+    --card-foreground: 210 20% 98%;
     
-    --popover: 0 0% 100%; /* Pure White */
-    --popover-foreground: 0 0% 0%; /* Pure Black */
+    --popover: 225 25% 9%;
+    --popover-foreground: 210 20% 98%;
     
-    --primary: 0 0% 10%; /* Very Dark Gray (near black) */
-    --primary-foreground: 0 0% 100%; /* Pure White */
+    --primary: 262 83% 58%;
+    --primary-foreground: 210 20% 98%;
     
-    --secondary: 0 0% 90%; /* Light Gray */
-    --secondary-foreground: 0 0% 10%; /* Very Dark Gray */
+    --secondary: 220 14% 15%;
+    --secondary-foreground: 210 20% 98%;
     
-    --muted: 0 0% 96.1%; /* Very Light Gray */
-    --muted-foreground: 0 0% 45.1%; /* Medium Gray */
+    --muted: 220 14% 15%;
+    --muted-foreground: 220 14% 70%;
     
-    --accent: 0 0% 96.1%; /* Very Light Gray */
-    --accent-foreground: 0 0% 10%; /* Very Dark Gray */
+    --accent: 262 83% 58%;
+    --accent-foreground: 210 20% 98%;
     
-    --destructive: 0 84.2% 60.2%; /* Keeping original red for destructive actions */
-    --destructive-foreground: 0 0% 100%; /* White */
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 20% 98%;
     
-    --border: 0 0% 89.8%; /* Light Gray */
-    --input: 0 0% 89.8%; /* Light Gray */
-    --ring: 0 0% 10%; /* Very Dark Gray */
+    --border: 220 14% 20%;
+    --input: 220 14% 20%;
+    --ring: 262 83% 58%;
     
-    --radius: 0.5rem;
+    --radius: 1rem;
 
-    --sidebar-background: 0 0% 10%; /* Dark Sidebar */
-    --sidebar-foreground: 0 0% 100%; /* White Text */
-    --sidebar-primary: 0 0% 15%; /* Darker Sidebar */
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 20%; /* Even Darker Sidebar */
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 25%;
-    --sidebar-ring: 0 0% 40%;
+    --sidebar-background: 225 25% 5%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-primary: 225 25% 7%;
+    --sidebar-primary-foreground: 210 20% 98%;
+    --sidebar-accent: 262 83% 58%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 220 14% 20%;
+    --sidebar-ring: 262 83% 58%;
   }
 
-  .dark {
-    --background: 0 0% 10%; /* Dark Background */
-    --foreground: 0 0% 98%; /* Almost White */
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
     
-    --card: 0 0% 15%; /* Slightly Lighter Dark Background */
-    --card-foreground: 0 0% 98%; /* Almost White */
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
     
-    --popover: 0 0% 15%; /* Slightly Lighter Dark Background */
-    --popover-foreground: 0 0% 98%; /* Almost White */
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
     
-    --primary: 0 0% 90%; /* Light Gray */
-    --primary-foreground: 0 0% 10%; /* Very Dark Gray */
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
     
-    --secondary: 0 0% 20%; /* Dark Gray */
-    --secondary-foreground: 0 0% 98%; /* Almost White */
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
     
-    --muted: 0 0% 20%; /* Dark Gray */
-    --muted-foreground: 0 0% 63.9%; /* Medium Gray */
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
     
-    --accent: 0 0% 25%; /* Darker Gray */
-    --accent-foreground: 0 0% 98%; /* Almost White */
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
     
-    --destructive: 0 62.8% 30.6%; /* Dark Red */
-    --destructive-foreground: 0 0% 98%; /* Almost White */
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
     
-    --border: 0 0% 25%; /* Dark Border */
-    --input: 0 0% 25%; /* Dark Input */
-    --ring: 0 0% 90%; /* Light Ring */
-    
-    --sidebar-background: 0 0% 15%; /* Dark Sidebar */
-    --sidebar-foreground: 0 0% 98%; /* Almost White Text */
-    --sidebar-primary: 0 0% 10%; /* Darker Sidebar */
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 0 0% 20%; /* Even Darker Sidebar */
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 30%;
-    --sidebar-ring: 0 0% 40%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 262 83% 58%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 10% 3.9%;
+    --sidebar-primary: 240 4.8% 95.9%;
+    --sidebar-primary-foreground: 240 5.9% 10%;
+    --sidebar-accent: 262 83% 58%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 240 5.9% 90%;
+    --sidebar-ring: 262 83% 58%;
   }
 }
 
@@ -102,6 +103,19 @@
   
   .animate-fade-in {
     animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  .gradient-bg {
+    background: radial-gradient(circle at top right, rgba(100, 50, 255, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at bottom left, rgba(100, 50, 255, 0.1) 0%, transparent 30%);
+  }
+  
+  .gradient-card {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, 
+                  rgba(255, 255, 255, 0.05) 0%, 
+                  rgba(255, 255, 255, 0.02) 100%);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   }
   
   @keyframes fadeIn {
