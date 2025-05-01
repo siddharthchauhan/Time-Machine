@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -10,8 +10,14 @@ export const useTimeEntryForm = () => {
   const [description, setDescription] = useState('');
   const [manualHours, setManualHours] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isProfileLoaded, setIsProfileLoaded] = useState(false);
   const { toast } = useToast();
   const { profile, supabase } = useAuth();
+  
+  // Check if profile is loaded
+  useEffect(() => {
+    setIsProfileLoaded(!!profile?.id);
+  }, [profile]);
 
   const validateRequiredFields = () => {
     if (!selectedProject || !selectedTask) {
@@ -35,15 +41,21 @@ export const useTimeEntryForm = () => {
       return false;
     }
 
+    // Make sure user_id is available
+    if (!profile?.id) {
+      toast({
+        title: "Error saving time entry",
+        description: "User profile not available. Please try again after refreshing the page.",
+        variant: "destructive",
+      });
+      console.error("User profile not available for time entry creation");
+      return false;
+    }
+
     setIsSubmitting(true);
     
     try {
       const entryDate = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
-      
-      // Make sure user_id is available
-      if (!profile?.id) {
-        throw new Error("User profile not found");
-      }
       
       // Create a new time entry in the database
       const { error } = await supabase
@@ -93,6 +105,7 @@ export const useTimeEntryForm = () => {
     manualHours,
     setManualHours,
     isSubmitting,
+    isProfileLoaded,
     validateRequiredFields,
     saveTimeEntry
   };

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
@@ -20,8 +20,14 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
     status: "active"
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isProfileLoaded, setIsProfileLoaded] = useState(false);
   const { toast } = useToast();
   const { supabase, profile } = useAuth();
+
+  // Check if profile is loaded
+  useEffect(() => {
+    setIsProfileLoaded(!!profile?.id);
+  }, [profile]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -43,20 +49,25 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
       return;
     }
 
+    if (!profile?.id) {
+      toast({
+        title: "Error creating project",
+        description: "User profile not available. Please try again after refreshing the page.",
+        variant: "destructive",
+      });
+      console.error("User profile not available for project creation");
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
-      // Make sure we have a valid user profile ID
-      if (!profile?.id) {
-        throw new Error("User profile not available");
-      }
-      
       // Insert the project into the database
       const { data, error } = await supabase
         .from('projects')
         .insert({
           name: formValues.name,
-          description: formValues.description,
+          description: formValues.description || null,
           status: 'active',
           created_by: profile.id,
           created_at: new Date().toISOString(),
@@ -86,12 +97,12 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
       });
       setOpen(false);
     } catch (error: any) {
+      console.error("Project creation error:", error);
       toast({
         title: "Error creating project",
         description: error.message || "Failed to create project",
         variant: "destructive",
       });
-      console.error("Project creation error:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -113,9 +124,14 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
           <div className="grid gap-4 py-4">
             <BasicProjectInfo
               name={formValues.name}
-              description={formValues.description}
+              description={formValues.description || ""}
               onChange={handleChange}
             />
+            {!isProfileLoaded && (
+              <div className="text-sm text-amber-500 bg-amber-50 p-2 rounded">
+                Warning: User profile not detected. You may need to refresh the page.
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button 
@@ -126,7 +142,7 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || !isProfileLoaded}>
               {isSubmitting ? "Creating..." : "Create Project"}
             </Button>
           </DialogFooter>

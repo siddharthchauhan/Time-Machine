@@ -1,64 +1,25 @@
 
-import { useState, useEffect, useRef } from "react";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
-import TimeEntryHeader from "./TimeEntryHeader";
-import ProjectTaskSelector from "./ProjectTaskSelector";
+import { useEffect } from "react";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useTimeEntryForm, useTimerControls } from "./hooks";
 import DatePicker from "./DatePicker";
-import TimeTracker from "./TimeTracker";
+import ProjectTaskSelector from "./ProjectTaskSelector";
 import DescriptionField from "./DescriptionField";
-import TimeEntryActions from "./TimeEntryActions";
-import { KeyboardShortcuts } from "./KeyboardShortcuts";
-import { useTimeEntry } from "./hooks/useTimeEntry";
+import TimeTracker from "./TimeTracker";
+import KeyboardShortcuts from "./KeyboardShortcuts";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
-type Project = {
-  id: string;
-  name: string;
-};
+interface TimeEntryFormProps {
+  projects: any[];
+  tasks: Record<string, any[]>;
+}
 
-type Task = {
-  id: string;
-  name: string;
-};
-
-type TimeEntryFormProps = {
-  projects?: Project[];
-  tasks?: Record<string, Task[]>;
-};
-
-const TimeEntryForm = ({ projects = [], tasks = {} }: TimeEntryFormProps) => {
-  // If no projects are provided, use defaults
-  const availableProjects = projects.length > 0 ? projects : [
-    { id: '1', name: 'Website Redesign' },
-    { id: '2', name: 'Mobile App' },
-    { id: '3', name: 'CRM Integration' },
-  ];
-
-  // Default tasks data structure for fallback
-  const availableTasks = Object.keys(tasks).length > 0 ? tasks : {
-    '1': [
-      { id: '1-1', name: 'Frontend Development' },
-      { id: '1-2', name: 'Content Creation' },
-      { id: '1-3', name: 'UI Design' },
-    ],
-    '2': [
-      { id: '2-1', name: 'UI Design' },
-      { id: '2-2', name: 'Feature Development' },
-      { id: '2-3', name: 'QA Testing' },
-    ],
-    '3': [
-      { id: '3-1', name: 'API Development' },
-      { id: '3-2', name: 'Integration Testing' },
-      { id: '3-3', name: 'Documentation' },
-    ],
-  };
-
+const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
   const {
     date,
     setDate,
-    isTracking,
-    isPaused,
     selectedProject,
     setSelectedProject,
     selectedTask,
@@ -67,63 +28,139 @@ const TimeEntryForm = ({ projects = [], tasks = {} }: TimeEntryFormProps) => {
     setDescription,
     manualHours,
     setManualHours,
-    trackingDuration,
     isSubmitting,
+    isProfileLoaded,
+    validateRequiredFields,
+    saveTimeEntry
+  } = useTimeEntryForm();
+  
+  const {
+    isTracking,
+    trackingDuration,
+    isPaused,
     handleStartTracking,
-    handlePauseTracking,
     handleStopTracking,
-    handleSubmit,
-    handleSubmitForApproval,
-    handleReset
-  } = useTimeEntry(availableTasks);
+    handlePauseTracking,
+    resetTracking
+  } = useTimerControls(validateRequiredFields);
+  
+  const handleReset = () => {
+    setSelectedProject('');
+    setSelectedTask('');
+    setDescription('');
+    setManualHours('');
+    resetTracking();
+  };
+  
+  const handleSaveDraft = async () => {
+    const hours = isTracking 
+      ? Number((trackingDuration / 3600).toFixed(2))
+      : Number(manualHours);
+      
+    if (hours <= 0) {
+      return;
+    }
+    
+    const success = await saveTimeEntry(hours, 'draft');
+    if (success) {
+      handleReset();
+    }
+  };
+  
+  const handleSubmit = async () => {
+    const hours = isTracking 
+      ? Number((trackingDuration / 3600).toFixed(2))
+      : Number(manualHours);
+      
+    if (hours <= 0) {
+      return;
+    }
+    
+    const success = await saveTimeEntry(hours, 'submitted');
+    if (success) {
+      handleReset();
+    }
+  };
 
   return (
     <Card>
-      <TimeEntryHeader />
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          <ProjectTaskSelector 
-            projects={availableProjects}
-            selectedProject={selectedProject}
-            setSelectedProject={setSelectedProject}
-            selectedTask={selectedTask}
-            setSelectedTask={setSelectedTask}
-            tasks={availableTasks}
-          />
-          
-          <DatePicker 
-            date={date}
-            setDate={setDate}
-          />
-          
-          <TimeTracker 
-            isTracking={isTracking}
-            isPaused={isPaused}
-            trackingDuration={trackingDuration}
-            manualHours={manualHours}
-            setManualHours={setManualHours}
-            handleStartTracking={handleStartTracking}
-            handleStopTracking={handleStopTracking}
-            handlePauseTracking={handlePauseTracking}
-          />
-          
-          <DescriptionField 
-            description={description}
-            setDescription={setDescription}
-          />
-          
-          <KeyboardShortcuts />
-        </CardContent>
+      <CardHeader>
+        <CardTitle>Track Your Time</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Record time spent on tasks and projects
+        </p>
+      </CardHeader>
+      
+      <CardContent className="space-y-4">
+        {!isProfileLoaded && (
+          <Alert variant="warning" className="bg-amber-50 border-amber-200">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              User profile not available. Please refresh the page to load your profile.
+            </AlertDescription>
+          </Alert>
+        )}
         
-        <CardFooter className="flex flex-col items-start gap-3">
-          <TimeEntryActions 
-            isSubmitting={isSubmitting}
-            isTracking={isTracking}
-            handleSubmitForApproval={handleSubmitForApproval}
-            handleReset={handleReset}
-          />
-        </CardFooter>
-      </form>
+        <DatePicker
+          date={date}
+          onChange={setDate}
+        />
+        
+        <ProjectTaskSelector
+          projects={projects}
+          tasks={tasks}
+          selectedProject={selectedProject}
+          selectedTask={selectedTask}
+          onProjectChange={setSelectedProject}
+          onTaskChange={setSelectedTask}
+          disabled={isTracking}
+        />
+        
+        <TimeTracker
+          isTracking={isTracking}
+          trackingDuration={trackingDuration}
+          manualHours={manualHours}
+          setManualHours={setManualHours}
+          handleStartTracking={handleStartTracking}
+          handleStopTracking={handleStopTracking}
+          handlePauseTracking={handlePauseTracking}
+          isPaused={isPaused}
+        />
+        
+        <DescriptionField
+          value={description}
+          onChange={setDescription}
+        />
+        
+        <KeyboardShortcuts />
+      </CardContent>
+      
+      <CardFooter className="flex justify-between">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={handleReset}
+          disabled={isSubmitting || (!isTracking && !selectedProject && !selectedTask && !description && !manualHours)}
+        >
+          Reset
+        </Button>
+        
+        <div className="flex space-x-2">
+          <Button 
+            variant="secondary" 
+            onClick={handleSaveDraft} 
+            disabled={isSubmitting || isTracking || (!isTracking && Number(manualHours) <= 0) || !isProfileLoaded}
+          >
+            Save as Draft
+          </Button>
+          <Button 
+            onClick={handleSubmit} 
+            disabled={isSubmitting || isTracking || (!isTracking && Number(manualHours) <= 0) || !isProfileLoaded}
+          >
+            Submit for Approval
+          </Button>
+        </div>
+      </CardFooter>
     </Card>
   );
 };
