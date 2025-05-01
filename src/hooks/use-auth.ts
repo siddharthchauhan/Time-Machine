@@ -22,11 +22,18 @@ export const useAuth = () => {
       if (context.user?.id && !context.profile?.id) {
         // If we have a user but no complete profile, try to fetch it
         try {
-          const profileData = await context.refreshProfile();
-          
-          if (isMounted) {
-            setIsReady(!!profileData);
-            setIsLoading(false);
+          if (context.refreshProfile) {
+            const profileData = await context.refreshProfile();
+            
+            if (isMounted) {
+              setIsReady(!!profileData);
+              setIsLoading(false);
+            }
+          } else {
+            console.error("refreshProfile function is not available in context");
+            if (isMounted) {
+              setIsLoading(false);
+            }
           }
         } catch (error) {
           console.error("Error fetching user profile:", error);

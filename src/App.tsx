@@ -19,11 +19,22 @@ import { StrictMode, useState } from "react";
 import { AuthProvider, RequireAuth } from "./components/auth/AuthProvider";
 import { ThemeProvider } from "./components/theme/ThemeProvider";
 
+// Configure query client with error handling for database connections
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      onError: (error: any) => {
+        console.error("Query error:", error);
+        // You can use toast here if needed
+      }
+    },
+    mutations: {
+      onError: (error: any) => {
+        console.error("Mutation error:", error);
+        // You can use toast here if needed
+      }
     }
   }
 });

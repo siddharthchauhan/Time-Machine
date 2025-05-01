@@ -1,9 +1,9 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthState, UserProfile } from '@/lib/auth';
 import { Navigate, useLocation } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType extends AuthState {
   signIn: (email: string, password: string) => Promise<{ error: any | null }>;
@@ -21,6 +21,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileAttempted, setProfileAttempted] = useState(false);
+  const { toast } = useToast();
 
   // Function to fetch user profile
   const fetchProfile = async (userId: string): Promise<UserProfile | null> => {
@@ -33,6 +34,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
       if (error) {
         console.error("Error fetching profile:", error);
+        toast({
+          title: "Database Error",
+          description: "Could not fetch your profile data. Please try again later.",
+          variant: "destructive"
+        });
         return null;
       }
       
@@ -40,6 +46,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return data;
     } catch (error) {
       console.error("Exception fetching profile:", error);
+      toast({
+        title: "Connection Error",
+        description: "Could not connect to the database. Please check your connection.",
+        variant: "destructive"
+      });
       return null;
     }
   };
@@ -83,7 +94,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               if (profileData && isMounted) {
                 setProfile(profileData);
               } else if (isMounted) {
-                setProfile({ id: currentSession.user.id, full_name: currentSession.user.email });
+                setProfile({ id: currentSession.user.id, email: currentSession.user.email });
               }
             } catch (error) {
               console.error("Error fetching profile in auth state change:", error);
@@ -99,7 +110,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Then check for existing session
     const initializeAuth = async () => {
       try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Error getting session:", error);
+          toast({
+            title: "Authentication Error",
+            description: "Could not connect to authentication service. Please refresh the page.",
+            variant: "destructive"
+          });
+        }
         
         if (isMounted) {
           setSession(currentSession);
@@ -113,12 +133,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               setProfile(profileData);
             } else if (isMounted) {
               // Create a minimal profile if not found
-              setProfile({ id: currentSession.user.id, full_name: currentSession.user.email });
+              setProfile({ id: currentSession.user.id, email: currentSession.user.email });
             }
           }
         }
       } catch (error) {
         console.error("Error initializing auth:", error);
+        toast({
+          title: "Connection Error",
+          description: "Failed to initialize authentication. Please refresh the page.",
+          variant: "destructive"
+        });
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -135,25 +160,68 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        toast({
+          title: "Sign in failed",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
+      return { error };
+    } catch (error: any) {
+      toast({
+        title: "Connection Error",
+        description: "Could not connect to authentication service. Please try again.",
+        variant: "destructive"
+      });
+      return { error };
+    }
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName
+          }
         }
+      });
+      
+      if (error) {
+        toast({
+          title: "Sign up failed",
+          description: error.message,
+          variant: "destructive"
+        });
       }
-    });
-    return { data, error };
+      
+      return { data, error };
+    } catch (error: any) {
+      toast({
+        title: "Connection Error",
+        description: "Could not connect to authentication service. Please try again.",
+        variant: "destructive"
+      });
+      return { data: null, error };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast({
+        title: "Sign out failed",
+        description: "Could not sign out. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const value = {

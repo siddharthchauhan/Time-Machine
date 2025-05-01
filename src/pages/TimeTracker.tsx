@@ -8,11 +8,15 @@ import NewTaskDialog from "@/components/time-tracker/NewTaskDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const TimeTracker = () => {
   const [projects, setProjects] = useState<any[]>([]);
   const [tasks, setTasks] = useState<Record<string, any[]>>({});
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
+  const [databaseError, setDatabaseError] = useState<string | null>(null);
   const { toast } = useToast();
   const { profile, supabase, isReady } = useAuth();
   
@@ -25,6 +29,7 @@ const TimeTracker = () => {
   
   const fetchProjects = async () => {
     setIsLoadingProjects(true);
+    setDatabaseError(null);
     try {
       const { data, error } = await supabase
         .from('projects')
@@ -46,6 +51,7 @@ const TimeTracker = () => {
       }
     } catch (error: any) {
       console.error('Error fetching projects:', error);
+      setDatabaseError(error.message || "Failed to load projects from database");
       toast({
         title: "Error fetching projects",
         description: error.message || "Failed to load projects",
@@ -111,6 +117,14 @@ const TimeTracker = () => {
     });
   };
 
+  const handleRefresh = () => {
+    if (isReady && profile?.id) {
+      fetchProjects();
+    } else {
+      window.location.reload();
+    }
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6 md:space-y-8 animate-fade-in">
@@ -126,6 +140,23 @@ const TimeTracker = () => {
             <NewProjectDialog onProjectCreated={handleProjectCreated} />
           </div>
         </div>
+        
+        {databaseError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="flex justify-between items-center">
+              <span>Database error: {databaseError}</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRefresh}
+                className="ml-2"
+              >
+                <RefreshCw className="h-3.5 w-3.5 mr-1" /> Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
