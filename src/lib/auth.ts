@@ -16,6 +16,7 @@ export interface AuthState {
   user?: any;
   session?: any;
   profile: UserProfile | null;
+  refreshProfile?: () => Promise<UserProfile | null>;
 }
 
 // This context is now implemented in components/auth/AuthProvider.tsx
