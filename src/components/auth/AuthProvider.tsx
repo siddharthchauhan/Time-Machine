@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +22,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileAttempted, setProfileAttempted] = useState(false);
+  const [authFlowState, setAuthFlowState] = useState('signIn'); // Added missing state
   const { toast } = useToast();
 
   // Function to fetch user profile
@@ -232,7 +234,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signUp,
     signOut,
     isLoading,
-    refreshProfile
+    refreshProfile,
+    authFlowState,     // Added missing property
+    setAuthFlowState   // Added missing property
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
