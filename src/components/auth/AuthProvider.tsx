@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileAttempted, setProfileAttempted] = useState(false);
-  const [authFlowState, setAuthFlowState] = useState('signIn'); // Added missing state
+  const [authFlowState, setAuthFlowState] = useState('signIn');
   const { toast } = useToast();
 
   // Function to fetch user profile
@@ -235,8 +235,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signOut,
     isLoading,
     refreshProfile,
-    authFlowState,     // Added missing property
-    setAuthFlowState   // Added missing property
+    authFlowState,
+    setAuthFlowState
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
