@@ -25,15 +25,19 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
-      onError: (error: any) => {
-        console.error("Query error:", error);
-        // You can use toast here if needed
+      meta: {
+        onError: (error: any) => {
+          console.error("Query error:", error);
+          // You can use toast here if needed
+        }
       }
     },
     mutations: {
-      onError: (error: any) => {
-        console.error("Mutation error:", error);
-        // You can use toast here if needed
+      meta: {
+        onError: (error: any) => {
+          console.error("Mutation error:", error);
+          // You can use toast here if needed
+        }
       }
     }
   }

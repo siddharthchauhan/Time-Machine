@@ -52,6 +52,7 @@ export function useProjects() {
         throw error;
       }
 
+      // Ensure status is cast to the correct type
       const formattedProjects = data?.map((project) => ({
         id: project.id,
         name: project.name,
@@ -62,7 +63,7 @@ export function useProjects() {
         end_date: project.end_date,
         budget_hours: project.budget_hours,
         budget_amount: project.budget_amount,
-        status: project.status,
+        status: project.status as "active" | "completed" | "onHold" | "archived",
         created_at: project.created_at,
         updated_at: project.updated_at,
       })) || [];
@@ -95,7 +96,7 @@ export function useProjects() {
           end_date: values.endDate,
           budget_hours: values.budgetHours,
           budget_amount: values.budgetAmount,
-          status: values.status,
+          status: values.status as "active" | "completed" | "onHold" | "archived",
           created_by: profile?.id,
           updated_at: new Date().toISOString(),
         })
@@ -107,7 +108,7 @@ export function useProjects() {
         throw error;
       }
 
-      // Create a formatted project object
+      // Create a formatted project object with proper type casting
       const newProject: Project = {
         id: data.id,
         name: data.name,
@@ -118,7 +119,7 @@ export function useProjects() {
         end_date: data.end_date,
         budget_hours: data.budget_hours,
         budget_amount: data.budget_amount,
-        status: data.status,
+        status: data.status as "active" | "completed" | "onHold" | "archived",
         created_at: data.created_at,
         updated_at: data.updated_at,
       };
@@ -183,7 +184,7 @@ export function useProjects() {
                 end_date: data.end_date,
                 budget_hours: data.budget_hours,
                 budget_amount: data.budget_amount,
-                status: data.status,
+                status: data.status as "active" | "completed" | "onHold" | "archived",
                 updated_at: data.updated_at,
               }
             : project
@@ -228,7 +229,7 @@ export function useProjects() {
       setProjects((prev) =>
         prev.map((project) =>
           project.id === projectId
-            ? { ...project, status: "archived" }
+            ? { ...project, status: "archived" as const }
             : project
         )
       );
