@@ -1,5 +1,5 @@
 
-import { useContext, useEffect, useState, useCallback } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { AuthContext, UserProfile } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -12,34 +12,6 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   
-  // Function to force refresh profile data
-  const refreshProfile = useCallback(async () => {
-    if (!context.user?.id) {
-      setIsLoading(false);
-      return null;
-    }
-
-    setIsLoading(true);
-    
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', context.user.id)
-        .single();
-        
-      if (error) throw error;
-      
-      console.log("Profile refresh attempt:", data ? "successful" : "not found");
-      return data;
-    } catch (error) {
-      console.error("Error refreshing user profile:", error);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [context.user]);
-  
   // Add an additional check to ensure profile is available
   useEffect(() => {
     let isMounted = true;
@@ -47,32 +19,14 @@ export const useAuth = () => {
     const checkProfile = async () => {
       setIsLoading(true);
       
-      if (context.user?.id && !context.profile) {
-        // If we have a user but no profile, try to fetch it
+      if (context.user?.id && !context.profile?.id) {
+        // If we have a user but no complete profile, try to fetch it
         try {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', context.user?.id)
-            .single();
-            
-          if (error) throw error;
+          const profileData = await context.refreshProfile();
           
-          console.log("Profile fetch attempt:", data ? "successful" : "not found");
-          
-          // Wait for AuthProvider to update with profile data
-          if (data) {
-            // Give time for the AuthProvider to update the profile
-            setTimeout(() => {
-              if (isMounted) {
-                setIsReady(!!context.profile?.id);
-                setIsLoading(false);
-              }
-            }, 500);
-          } else {
-            if (isMounted) {
-              setIsLoading(false);
-            }
+          if (isMounted) {
+            setIsReady(!!profileData);
+            setIsLoading(false);
           }
         } catch (error) {
           console.error("Error fetching user profile:", error);
@@ -94,13 +48,12 @@ export const useAuth = () => {
     return () => {
       isMounted = false;
     };
-  }, [context.user, context.profile]);
+  }, [context.user, context.profile, context.refreshProfile]);
   
   return {
     ...context,
     supabase,
     isReady,
-    isLoading,
-    refreshProfile
+    isLoading
   };
 };

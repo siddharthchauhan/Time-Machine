@@ -15,11 +15,18 @@ import Clients from "./pages/Clients";
 import Projects from "./pages/Projects";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
-import { StrictMode } from "react";
+import { StrictMode, useState } from "react";
 import { AuthProvider, RequireAuth } from "./components/auth/AuthProvider";
 import { ThemeProvider } from "./components/theme/ThemeProvider";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    }
+  }
+});
 
 const App = () => (
   <StrictMode>
