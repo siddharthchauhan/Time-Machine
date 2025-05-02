@@ -1,5 +1,5 @@
 
-import { Clock, FileCheck, BarChart3, Users, Settings, User, Timer, Home, Briefcase, FolderKanban } from "lucide-react";
+import { Clock, FileCheck, BarChart3, Users, Timer, Home, Briefcase, FolderKanban } from "lucide-react";
 
 export const navItems = [
   {
@@ -36,15 +36,5 @@ export const navItems = [
     label: "Reports",
     path: "/reports",
     icon: BarChart3,
-  },
-  {
-    label: "Settings",
-    path: "/settings",
-    icon: Settings,
-  },
-  {
-    label: "Profile",
-    path: "/profile",
-    icon: User,
   },
 ];
