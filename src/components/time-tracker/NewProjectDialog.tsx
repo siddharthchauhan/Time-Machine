@@ -177,7 +177,7 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
               onChange={handleChange}
             />
             {profileError && (
-              <Alert variant="warning" className="bg-amber-50 border-amber-200">
+              <Alert variant="destructive" className="bg-amber-50 border-amber-200">
                 <AlertTitle className="text-amber-600">Unable to load profile</AlertTitle>
                 <div className="flex items-center justify-between">
                   <AlertDescription className="text-amber-600">
