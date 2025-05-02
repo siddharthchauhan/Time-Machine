@@ -1,7 +1,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, Calendar } from "lucide-react";
 
 interface Task {
   id: string;
@@ -11,33 +10,6 @@ interface Task {
   estimatedHours: number;
   priority: 'low' | 'medium' | 'high';
 }
-
-const tasks: Task[] = [
-  {
-    id: '1',
-    title: 'Complete homepage design',
-    project: 'Website Redesign',
-    dueDate: '2025-04-24',
-    estimatedHours: 6,
-    priority: 'high'
-  },
-  {
-    id: '2',
-    title: 'User profile API endpoints',
-    project: 'CRM Integration',
-    dueDate: '2025-04-25',
-    estimatedHours: 8,
-    priority: 'medium'
-  },
-  {
-    id: '3',
-    title: 'Create wireframes for new features',
-    project: 'Mobile App',
-    dueDate: '2025-04-26',
-    estimatedHours: 4,
-    priority: 'medium'
-  }
-];
 
 const getPriorityColor = (priority: string) => {
   switch (priority) {
@@ -53,6 +25,15 @@ const getPriorityColor = (priority: string) => {
 };
 
 const UpcomingTasks = () => {
+  // Empty state UI for when there are no tasks
+  const renderEmptyState = () => {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-center">
+        <p className="text-sm text-muted-foreground mb-4">No upcoming tasks</p>
+      </div>
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -63,32 +44,7 @@ const UpcomingTasks = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {tasks.map((task) => (
-            <div key={task.id} className="flex flex-col p-3 rounded-lg border">
-              <div className="flex justify-between">
-                <h4 className="font-medium text-sm">{task.title}</h4>
-                <span className={`text-xs font-medium capitalize ${getPriorityColor(task.priority)}`}>
-                  {task.priority}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">{task.project}</p>
-              <div className="flex items-center justify-between mt-2">
-                <div className="flex items-center text-xs">
-                  <Calendar className="h-3 w-3 mr-1" />
-                  <span>
-                    {new Date(task.dueDate).toLocaleDateString('en-US', { 
-                      month: 'short', 
-                      day: 'numeric' 
-                    })}
-                  </span>
-                </div>
-                <div className="flex items-center text-xs">
-                  <Clock className="h-3 w-3 mr-1" />
-                  <span>{task.estimatedHours} hours</span>
-                </div>
-              </div>
-            </div>
-          ))}
+          {renderEmptyState()}
         </div>
       </CardContent>
       <CardFooter className="flex justify-end">
