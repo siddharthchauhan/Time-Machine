@@ -10,9 +10,10 @@ import { CalendarIcon } from "lucide-react";
 interface DatePickerProps {
   date: Date;
   setDate: (date: Date) => void;
+  disabled?: boolean;
 }
 
-const DatePicker = ({ date, setDate }: DatePickerProps) => {
+const DatePicker = ({ date, setDate, disabled }: DatePickerProps) => {
   return (
     <div className="space-y-1">
       <Label htmlFor="date">Date</Label>
@@ -24,6 +25,7 @@ const DatePicker = ({ date, setDate }: DatePickerProps) => {
               "w-full justify-start text-left font-normal",
               !date && "text-muted-foreground"
             )}
+            disabled={disabled}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
             {date ? format(date, "PPP") : <span>Pick a date</span>}

@@ -81,7 +81,7 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
       </CardHeader>
       <CardContent className="space-y-4">
         {!isProfileLoaded && (
-          <Alert variant="warning" className="mb-4">
+          <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Profile data not loaded</AlertTitle>
             <div className="flex items-center justify-between">

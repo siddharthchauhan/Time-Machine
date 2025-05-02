@@ -27,21 +27,31 @@ export const useTimeEntry = (projects: any[], tasks: Record<string, any[]>) => {
     isTracking,
     isPaused,
     trackingDuration,
-    handleStartTracking,
-    handleStopTracking,
-    handlePauseTracking,
-    handleResumeTracking,
-  } = useTimerControls({
-    validateRequiredFields
-  });
+    startTracking,
+    pauseTracking,
+    stopTracking,
+  } = useTimerControls();
+
+  // Create handler functions that match what's expected elsewhere
+  const handleStartTracking = () => {
+    startTracking(validateRequiredFields);
+  };
+
+  const handleStopTracking = () => {
+    stopTracking();
+  };
+
+  const handlePauseTracking = () => {
+    pauseTracking();
+  };
+
+  const handleResumeTracking = handlePauseTracking; // Resume is the same function as pause
 
   useKeyboardShortcuts({
     isTracking,
     isPaused,
-    startTimer: handleStartTracking,
-    stopTimer: handleStopTracking,
-    pauseTimer: handlePauseTracking,
-    resumeTimer: handleResumeTracking,
+    onStartStop: handleStartTracking,
+    onPauseResume: handlePauseTracking,
   });
   
   // Reset the form
@@ -79,6 +89,6 @@ export const useTimeEntry = (projects: any[], tasks: Record<string, any[]>) => {
     isProfileLoaded,
     saveTimeEntry,
     handleReset,
-    refreshProfile  // Make sure to include this function in the returned object
+    refreshProfile
   };
 };
