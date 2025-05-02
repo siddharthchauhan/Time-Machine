@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Project, ProjectFormValues } from "@/components/projects/ProjectModel";
 import { ProjectList } from "@/components/projects/ProjectList";
 import { ProjectDialog } from "@/components/projects/ProjectDialog";
-import { useProjects } from "@/components/projects/useProjects";
+import { useProjects } from "@/components/projects/hooks";
 
 const Projects = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
