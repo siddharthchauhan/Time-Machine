@@ -1,12 +1,12 @@
 
+import { useState, useEffect } from "react";
 import { useTimeEntryForm } from "./useTimeEntryForm";
 import { useTimerControls } from "./useTimerControls";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
-import { Task } from "./types";
 
-export function useTimeEntry(availableTasks: Record<string, Task[]>) {
+export const useTimeEntry = (projects: any[], tasks: Record<string, any[]>) => {
   const {
-    date,
+    date, 
     setDate,
     selectedProject,
     setSelectedProject,
@@ -22,78 +22,41 @@ export function useTimeEntry(availableTasks: Record<string, Task[]>) {
     saveTimeEntry,
     refreshProfile
   } = useTimeEntryForm();
-
+  
   const {
     isTracking,
     isPaused,
     trackingDuration,
-    trackingStartTime,
-    startTracking,
-    pauseTracking,
-    stopTracking
-  } = useTimerControls();
+    handleStartTracking,
+    handleStopTracking,
+    handlePauseTracking,
+    handleResumeTracking,
+  } = useTimerControls({
+    validateRequiredFields
+  });
 
-  const handleStartTracking = () => {
-    if (validateRequiredFields()) {
-      startTracking();
-    }
-  };
-
-  const handlePauseTracking = () => {
-    pauseTracking();
-  };
-
-  const handleStopTracking = () => {
-    const hours = stopTracking();
-    setManualHours(hours);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (isTracking) {
-      handleStopTracking();
-    }
-
-    const hours = parseFloat(manualHours);
-    const success = await saveTimeEntry(hours, 'draft');
-    
-    if (success) {
-      handleReset();
-    }
-  };
+  useKeyboardShortcuts({
+    isTracking,
+    isPaused,
+    startTimer: handleStartTracking,
+    stopTimer: handleStopTracking,
+    pauseTimer: handlePauseTracking,
+    resumeTimer: handleResumeTracking,
+  });
   
-  const handleSubmitForApproval = async () => {
-    if (isTracking) {
-      handleStopTracking();
-    }
-
-    const hours = parseFloat(manualHours);
-    const success = await saveTimeEntry(hours, 'submitted');
-    
-    if (success) {
-      handleReset();
-    }
-  };
-
+  // Reset the form
   const handleReset = () => {
     setSelectedProject('');
     setSelectedTask('');
     setDescription('');
     setManualHours('');
-    
-    if (isTracking) {
-      stopTracking();
-    }
   };
-
-  useKeyboardShortcuts({
-    isTracking,
-    isPaused,
-    onStartStop: isTracking ? handleStopTracking : handleStartTracking,
-    onPauseResume: handlePauseTracking
-  });
-
+  
+  // When project changes, reset the task
+  useEffect(() => {
+    setSelectedTask('');
+  }, [selectedProject, setSelectedTask]);
+  
   return {
     date,
     setDate,
@@ -101,21 +64,21 @@ export function useTimeEntry(availableTasks: Record<string, Task[]>) {
     isPaused,
     selectedProject,
     setSelectedProject,
-    selectedTask,
+    selectedTask, 
     setSelectedTask,
     description,
     setDescription,
     manualHours,
     setManualHours,
     trackingDuration,
+    handleStartTracking,
+    handleStopTracking,
+    handlePauseTracking,
+    handleResumeTracking,
     isSubmitting,
     isProfileLoaded,
-    handleStartTracking,
-    handlePauseTracking,
-    handleStopTracking,
-    handleSubmit,
-    handleSubmitForApproval,
+    saveTimeEntry,
     handleReset,
-    refreshProfile
+    refreshProfile  // Make sure to include this function in the returned object
   };
-}
+};

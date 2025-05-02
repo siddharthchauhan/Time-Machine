@@ -1,15 +1,16 @@
 
-import { useEffect } from "react";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useTimeEntry } from "./hooks";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { RefreshCw, PlayCircle, PauseCircle, AlertCircle, Save } from "lucide-react";
 import DatePicker from "./DatePicker";
 import ProjectTaskSelector from "./ProjectTaskSelector";
-import DescriptionField from "./DescriptionField";
 import TimeTracker from "./TimeTracker";
-import { KeyboardShortcuts } from "./KeyboardShortcuts";
-import { AlertCircle, RefreshCw } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import DescriptionField from "./DescriptionField";
+import KeyboardShortcuts from "./KeyboardShortcuts";
+import { useTimeEntry, Task } from "./hooks";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface TimeEntryFormProps {
   projects: any[];
@@ -17,9 +18,13 @@ interface TimeEntryFormProps {
 }
 
 const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  
   const {
     date,
     setDate,
+    isTracking,
+    isPaused,
     selectedProject,
     setSelectedProject,
     selectedTask,
@@ -28,67 +33,77 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
     setDescription,
     manualHours,
     setManualHours,
+    trackingDuration,
+    handleStartTracking,
+    handleStopTracking,
+    handlePauseTracking,
+    handleResumeTracking,
     isSubmitting,
     isProfileLoaded,
-    isTracking,
-    trackingDuration,
-    isPaused,
-    handleStartTracking,
-    handlePauseTracking,
-    handleStopTracking,
-    handleSubmit,
-    handleSubmitForApproval,
+    saveTimeEntry,
     handleReset,
     refreshProfile
-  } = useTimeEntry(tasks);
+  } = useTimeEntry(projects, tasks);
   
-  const handleProfileRefresh = async () => {
-    if (refreshProfile) {
-      const success = await refreshProfile();
-      if (!success) {
-        // If the automatic refresh failed, suggest signing out and back in
-        console.error("Profile refresh failed, user may need to sign out and sign back in");
-      }
+  const handleSubmit = async () => {
+    // Convert manualHours from string to number
+    const hours = parseFloat(manualHours);
+    if (hours > 0 || trackingDuration > 0) {
+      const hoursToSave = hours > 0 ? hours : trackingDuration / 3600; // 3600 seconds in an hour
+      await saveTimeEntry(hoursToSave, 'submitted');
+      handleReset();
     }
   };
-
-  const handleSaveDraft = async (e: React.FormEvent) => {
-    await handleSubmit(e);
+  
+  const handleSaveDraft = async () => {
+    // Convert manualHours from string to number
+    const hours = parseFloat(manualHours);
+    if (hours > 0 || trackingDuration > 0) {
+      const hoursToSave = hours > 0 ? hours : trackingDuration / 3600; // 3600 seconds in an hour
+      await saveTimeEntry(hoursToSave, 'draft');
+      handleReset();
+    }
   };
-
+  
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader>
-        <CardTitle>Track Your Time</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Record time spent on tasks and projects
-        </p>
+        <div className="flex justify-between items-center">
+          <CardTitle>New Time Entry</CardTitle>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowKeyboardShortcuts(prev => !prev)}
+          >
+            Shortcuts
+          </Button>
+        </div>
       </CardHeader>
-      
       <CardContent className="space-y-4">
         {!isProfileLoaded && (
-          <Alert variant="destructive" className="bg-amber-50 border-amber-200">
+          <Alert variant="warning" className="mb-4">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="flex justify-between items-center">
-              <span>User profile not available. Please refresh your profile or sign out and back in.</span>
+            <AlertTitle>Profile data not loaded</AlertTitle>
+            <div className="flex items-center justify-between">
+              <AlertDescription>
+                Your profile is required to track time.
+              </AlertDescription>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="ml-2 bg-white" 
-                onClick={handleProfileRefresh}
+                onClick={refreshProfile}
+                className="ml-2 h-8"
               >
-                <RefreshCw className="h-3.5 w-3.5 mr-1" /> Refresh Profile
+                <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                Refresh
               </Button>
-            </AlertDescription>
+            </div>
           </Alert>
         )}
         
-        <DatePicker
-          date={date}
-          setDate={setDate}
-        />
+        <DatePicker date={date} setDate={setDate} disabled={isTracking} />
         
-        <ProjectTaskSelector
+        <ProjectTaskSelector 
           projects={projects}
           tasks={tasks}
           selectedProject={selectedProject}
@@ -98,7 +113,12 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
           disabled={isTracking}
         />
         
-        <TimeTracker
+        <DescriptionField 
+          description={description}
+          setDescription={setDescription}
+        />
+        
+        <TimeTracker 
           isTracking={isTracking}
           trackingDuration={trackingDuration}
           manualHours={manualHours}
@@ -109,39 +129,23 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
           isPaused={isPaused}
         />
         
-        <DescriptionField
-          description={description}
-          setDescription={setDescription}
-        />
-        
-        <KeyboardShortcuts />
+        {showKeyboardShortcuts && <KeyboardShortcuts />}
       </CardContent>
-      
       <CardFooter className="flex justify-between">
         <Button 
-          type="button" 
           variant="outline" 
-          onClick={handleReset}
-          disabled={isSubmitting || (!isTracking && !selectedProject && !selectedTask && !description && !manualHours)}
+          onClick={handleSaveDraft}
+          disabled={isTracking || isSubmitting || !isProfileLoaded}
         >
-          Reset
+          <Save className="h-4 w-4 mr-2" />
+          Save Draft
         </Button>
-        
-        <div className="flex space-x-2">
-          <Button 
-            variant="secondary" 
-            onClick={handleSaveDraft} 
-            disabled={isSubmitting || isTracking || (!isTracking && Number(manualHours) <= 0) || !isProfileLoaded}
-          >
-            Save as Draft
-          </Button>
-          <Button 
-            onClick={handleSubmitForApproval} 
-            disabled={isSubmitting || isTracking || (!isTracking && Number(manualHours) <= 0) || !isProfileLoaded}
-          >
-            Submit for Approval
-          </Button>
-        </div>
+        <Button 
+          onClick={handleSubmit}
+          disabled={isTracking || isSubmitting || !isProfileLoaded}
+        >
+          Submit
+        </Button>
       </CardFooter>
     </Card>
   );
