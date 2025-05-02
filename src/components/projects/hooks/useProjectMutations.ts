@@ -1,23 +1,32 @@
 
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Project, ProjectFormValues } from "../ProjectModel";
 import { useAuth } from "@/hooks/use-auth";
+import { Project, ProjectFormValues } from "../ProjectModel";
 
 export function useProjectMutations(
-  projects: Project[],
-  setProjects: (projects: Project[]) => void
+  projects: Project[], 
+  setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [dbConnectionError, setDbConnectionError] = useState<string | null>(null);
   const { toast } = useToast();
   const { supabase, profile } = useAuth();
-
+  
   const handleCreateProject = async (values: ProjectFormValues): Promise<boolean> => {
-    setDbConnectionError(null);
+    if (!profile?.id) {
+      console.error("No user profile found");
+      toast({
+        title: "Error",
+        description: "User profile not available. Please try again after refresh.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
     setIsSubmitting(true);
     
     try {
+      // Insert project into database
       const { data, error } = await supabase
         .from("projects")
         .insert({
@@ -26,41 +35,22 @@ export function useProjectMutations(
           client_id: values.clientId,
           start_date: values.startDate,
           end_date: values.endDate,
+          status: values.status,
           budget_hours: values.budgetHours,
           budget_amount: values.budgetAmount,
-          status: values.status,
-          created_by: profile?.id,
-          updated_at: new Date().toISOString(),
+          created_by: profile.id
         })
         .select()
         .single();
-
-      if (error) {
-        setDbConnectionError(error.message);
-        throw error;
-      }
-
-      // Create a formatted project object with proper type casting
-      const newProject: Project = {
-        id: data.id,
-        name: data.name,
-        description: data.description,
-        client_id: data.client_id,
-        client_name: undefined, // Will be fetched in the next projects list update
-        start_date: data.start_date,
-        end_date: data.end_date,
-        budget_hours: data.budget_hours,
-        budget_amount: data.budget_amount,
-        status: data.status as "active" | "completed" | "onHold" | "archived",
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-      };
-
-      setProjects((prev) => [newProject, ...prev]);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setProjects((prev: Project[]) => [...prev, data as Project]);
       
       toast({
         title: "Project created",
-        description: `${values.name} has been created successfully`,
+        description: `${values.name} has been created successfully`
       });
       
       return true;
@@ -68,7 +58,7 @@ export function useProjectMutations(
       console.error("Error creating project:", error);
       toast({
         title: "Error creating project",
-        description: error.message || "Could not create project",
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
       return false;
@@ -76,12 +66,12 @@ export function useProjectMutations(
       setIsSubmitting(false);
     }
   };
-
+  
   const handleUpdateProject = async (projectId: string, values: ProjectFormValues): Promise<boolean> => {
-    setDbConnectionError(null);
     setIsSubmitting(true);
     
     try {
+      // Update project in database
       const { data, error } = await supabase
         .from("projects")
         .update({
@@ -90,49 +80,33 @@ export function useProjectMutations(
           client_id: values.clientId,
           start_date: values.startDate,
           end_date: values.endDate,
+          status: values.status,
           budget_hours: values.budgetHours,
           budget_amount: values.budgetAmount,
-          status: values.status,
-          updated_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
         .eq("id", projectId)
         .select()
         .single();
-
-      if (error) {
-        setDbConnectionError(error.message);
-        throw error;
-      }
-
-      setProjects((prev) =>
-        prev.map((project) =>
-          project.id === projectId
-            ? {
-                ...project,
-                name: data.name,
-                description: data.description,
-                client_id: data.client_id,
-                start_date: data.start_date,
-                end_date: data.end_date,
-                budget_hours: data.budget_hours,
-                budget_amount: data.budget_amount,
-                status: data.status as "active" | "completed" | "onHold" | "archived",
-                updated_at: data.updated_at,
-              }
-            : project
-        )
+      
+      if (error) throw error;
+      
+      // Update local state
+      setProjects((prev: Project[]) => 
+        prev.map(project => project.id === projectId ? (data as Project) : project)
       );
-
+      
       toast({
         title: "Project updated",
-        description: `${values.name} has been updated successfully`,
+        description: `${values.name} has been updated successfully`
       });
+      
       return true;
     } catch (error: any) {
       console.error("Error updating project:", error);
       toast({
         title: "Error updating project",
-        description: error.message || "Could not update project",
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
       return false;
@@ -140,53 +114,52 @@ export function useProjectMutations(
       setIsSubmitting(false);
     }
   };
-
+  
   const handleArchiveProject = async (projectId: string): Promise<boolean> => {
-    if (!confirm("Are you sure you want to archive this project?")) {
-      return false;
-    }
-
-    setDbConnectionError(null);
+    setIsSubmitting(true);
+    
     try {
-      const { error } = await supabase
+      // Update project status to archived in database
+      const { data, error } = await supabase
         .from("projects")
-        .update({ status: "archived", updated_at: new Date().toISOString() })
-        .eq("id", projectId);
-
-      if (error) {
-        setDbConnectionError(error.message);
-        throw error;
-      }
-
-      setProjects((prev) =>
-        prev.map((project) =>
-          project.id === projectId
-            ? { ...project, status: "archived" as const }
-            : project
-        )
+        .update({
+          status: "archived",
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", projectId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Update local state
+      setProjects((prev: Project[]) => 
+        prev.map(project => project.id === projectId ? (data as Project) : project)
       );
-
+      
       toast({
         title: "Project archived",
-        description: "The project has been archived successfully",
+        description: `Project has been archived successfully`
       });
+      
       return true;
     } catch (error: any) {
       console.error("Error archiving project:", error);
       toast({
         title: "Error archiving project",
-        description: error.message || "Could not archive project",
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
       return false;
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
+  
   return {
     isSubmitting,
-    dbConnectionError,
     handleCreateProject,
     handleUpdateProject,
-    handleArchiveProject,
+    handleArchiveProject
   };
 }
