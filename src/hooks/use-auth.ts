@@ -56,17 +56,21 @@ export const useAuth = () => {
             setLoadError(error.message || "Error loading profile");
           }
         }
-      } else {
-        // We already have a profile or no user is logged in
+      } else if (context.user?.id && context.profile?.id) {
+        // We already have a profile
         if (isMounted) {
-          setIsReady(!!context.profile?.id);
+          console.log("Profile already loaded:", context.profile.id);
+          setIsReady(true);
           setIsLoading(false);
-          
-          if (context.user?.id && !context.profile?.id) {
-            setLoadError("Profile data not available");
-          } else {
-            setLoadError(null);
-          }
+          setLoadError(null);
+        }
+      } else {
+        // No user is logged in
+        if (isMounted) {
+          console.log("No user logged in");
+          setIsReady(false);
+          setIsLoading(false);
+          setLoadError(null);
         }
       }
     };
@@ -78,7 +82,8 @@ export const useAuth = () => {
     };
   }, [context.user, context.profile, context.refreshProfile]);
 
-  const forceRefreshProfile = async (): Promise<boolean> => {
+  const forceRefreshProfile = async (): Promise<UserProfile | null> => {
+    console.log("Force refreshing profile");
     setIsLoading(true);
     setLoadError(null);
     try {
@@ -86,16 +91,18 @@ export const useAuth = () => {
       setIsLoading(false);
       if (refreshedProfile?.id) {
         setIsReady(true);
-        return true;
+        console.log("Profile refreshed successfully:", refreshedProfile.id);
+        return refreshedProfile;
       } else {
         setLoadError("Could not refresh profile data");
-        return false;
+        console.error("Profile refresh returned no data");
+        return null;
       }
     } catch (error: any) {
       console.error("Error in forceRefreshProfile:", error);
       setLoadError(error.message || "Error refreshing profile");
       setIsLoading(false);
-      return false;
+      return null;
     }
   };
   

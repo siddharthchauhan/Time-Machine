@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -11,8 +11,16 @@ export const useTimeTrackerData = () => {
   const { toast } = useToast();
   const { profile, supabase, isReady, loadError, forceRefreshProfile } = useAuth();
   
+  // Run profile refresh when component mounts if no profile is available
+  useEffect(() => {
+    if (!isReady && !profile?.id) {
+      forceRefreshProfile();
+    }
+  }, []);
+  
   // Function to refresh profile and retry project loading
   const handleProfileRefresh = useCallback(async () => {
+    console.log("Attempting to refresh profile");
     const success = await forceRefreshProfile();
     if (success) {
       toast({
@@ -41,6 +49,8 @@ export const useTimeTrackerData = () => {
     }
     
     try {
+      console.log("Fetching projects with profile ID:", profile.id);
+      
       const { data, error } = await supabase
         .from('projects')
         .select('id, name')
@@ -71,6 +81,15 @@ export const useTimeTrackerData = () => {
       setIsLoadingProjects(false);
     }
   }, [profile, supabase, toast]);
+  
+  useEffect(() => {
+    if (isReady && profile?.id) {
+      console.log("Profile is ready, fetching projects");
+      fetchProjects();
+    } else {
+      console.log("Profile not ready yet:", isReady ? "ready but no profile" : "not ready");
+    }
+  }, [isReady, profile, fetchProjects]);
   
   const fetchTasksForProject = async (projectId: string) => {
     if (!projectId) {

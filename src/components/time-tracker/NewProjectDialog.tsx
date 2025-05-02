@@ -24,17 +24,22 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
   const { toast } = useToast();
   const { supabase, profile, isReady, loadError, forceRefreshProfile } = useAuth();
 
+  // Check profile status when dialog opens
   useEffect(() => {
     if (open) {
-      if (loadError) {
-        setProfileError(loadError);
-      } else if (!isReady || !profile?.id) {
-        setProfileError("Profile data not loaded yet");
+      if (!profile?.id) {
+        forceRefreshProfile().then(refreshedProfile => {
+          if (!refreshedProfile) {
+            setProfileError("Unable to load profile. Please refresh and try again.");
+          } else {
+            setProfileError(null);
+          }
+        });
       } else {
         setProfileError(null);
       }
     }
-  }, [open, isReady, profile, loadError]);
+  }, [open, profile, forceRefreshProfile]);
 
   const handleRefresh = async () => {
     const success = await forceRefreshProfile();
@@ -86,13 +91,15 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
     setIsSubmitting(true);
     
     try {
+      console.log("Creating project with user ID:", profile.id);
+      
       // Insert the project into the database
       const { data, error } = await supabase
         .from('projects')
         .insert({
           name: formValues.name,
           description: formValues.description || null,
-          status: 'active' as "active" | "completed" | "onHold" | "archived",
+          status: 'active',
           created_by: profile.id,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -153,7 +160,7 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
             />
             {profileError && (
               <div className="text-sm text-amber-500 bg-amber-50 p-3 rounded flex items-center justify-between">
-                <span>{profileError}. Please refresh your profile.</span>
+                <span>{profileError}</span>
                 <Button 
                   type="button" 
                   variant="outline" 
