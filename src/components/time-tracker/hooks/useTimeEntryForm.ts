@@ -12,16 +12,41 @@ export const useTimeEntryForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isProfileLoaded, setIsProfileLoaded] = useState(false);
   const { toast } = useToast();
-  const { profile, supabase, isReady } = useAuth();
+  const { profile, supabase, isReady, refreshProfile } = useAuth();
   
   // Check if profile is loaded
   useEffect(() => {
-    setIsProfileLoaded(isReady && !!profile?.id);
+    let isMounted = true;
     
-    if (isReady && profile?.id) {
-      console.log("Profile loaded successfully:", profile.id);
-    }
-  }, [isReady, profile]);
+    const checkProfileStatus = async () => {
+      if (isReady && profile?.id) {
+        if (isMounted) {
+          setIsProfileLoaded(true);
+          console.log("Profile loaded successfully:", profile.id);
+        }
+      } else if (isReady && !profile?.id) {
+        // Try to refresh the profile if user is authenticated but profile is missing
+        try {
+          const refreshedProfile = await refreshProfile();
+          if (isMounted) {
+            setIsProfileLoaded(!!refreshedProfile?.id);
+            console.log("Profile refresh result:", refreshedProfile ? "success" : "failed");
+          }
+        } catch (error) {
+          console.error("Error refreshing profile:", error);
+          if (isMounted) {
+            setIsProfileLoaded(false);
+          }
+        }
+      }
+    };
+    
+    checkProfileStatus();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [isReady, profile, refreshProfile]);
 
   const validateRequiredFields = useCallback(() => {
     if (!selectedProject || !selectedTask) {

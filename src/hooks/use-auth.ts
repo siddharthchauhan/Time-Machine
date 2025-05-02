@@ -26,7 +26,7 @@ export const useAuth = () => {
             const profileData = await context.refreshProfile();
             
             if (isMounted) {
-              setIsReady(!!profileData);
+              setIsReady(!!profileData?.id);
               setIsLoading(false);
             }
           } else {

@@ -61,11 +61,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (!user?.id) return null;
     
     try {
+      console.log("Refreshing profile for user ID:", user.id);
       const profileData = await fetchProfile(user.id);
       if (profileData) {
+        console.log("Profile refresh successful:", profileData);
         setProfile(profileData);
         return profileData;
       }
+      console.log("Profile refresh failed, no data returned");
       return null;
     } catch (error) {
       console.error("Error refreshing profile:", error);

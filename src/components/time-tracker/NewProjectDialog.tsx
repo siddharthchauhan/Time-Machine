@@ -20,18 +20,57 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
     status: "active"
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
   const { toast } = useToast();
-  const { supabase, profile, isReady } = useAuth();
+  const { supabase, profile, isReady, refreshProfile } = useAuth();
 
   useEffect(() => {
     if (open) {
-      setIsLoading(!isReady || !profile?.id);
+      const checkProfile = async () => {
+        setIsProfileLoading(true);
+        
+        if (isReady && profile?.id) {
+          setIsProfileLoading(false);
+        } else if (isReady && !profile?.id) {
+          // Try to refresh profile data if user is authenticated but profile is missing
+          try {
+            const refreshedProfile = await refreshProfile();
+            setIsProfileLoading(!refreshedProfile);
+          } catch (error) {
+            console.error("Error refreshing profile:", error);
+            setIsProfileLoading(false);
+          }
+        } else {
+          setIsProfileLoading(true);
+        }
+      };
+      
+      checkProfile();
     }
-  }, [open, profile, isReady]);
+  }, [open, profile, isReady, refreshProfile]);
 
-  const handleRefresh = () => {
-    window.location.reload();
+  const handleRefresh = async () => {
+    setIsProfileLoading(true);
+    try {
+      const refreshedProfile = await refreshProfile();
+      setIsProfileLoading(!refreshedProfile);
+      
+      if (!refreshedProfile) {
+        toast({
+          title: "Profile refresh failed",
+          description: "Could not load your profile data. Please try signing out and back in.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error refreshing profile:", error);
+      toast({
+        title: "Error refreshing profile",
+        description: "An unexpected error occurred while refreshing your profile.",
+        variant: "destructive",
+      });
+      setIsProfileLoading(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -57,7 +96,7 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
     if (!profile?.id) {
       toast({
         title: "Error creating project",
-        description: "User profile not available. Please try refreshing the page.",
+        description: "User profile not available. Please try refreshing your profile.",
         variant: "destructive",
       });
       console.error("User profile not available for project creation");
@@ -132,7 +171,7 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
               description={formValues.description || ""}
               onChange={handleChange}
             />
-            {isLoading && (
+            {isProfileLoading && (
               <div className="text-sm text-amber-500 bg-amber-50 p-3 rounded flex items-center justify-between">
                 <span>Profile data not loaded yet. Please wait or refresh.</span>
                 <Button 
@@ -157,7 +196,7 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || isLoading}>
+            <Button type="submit" disabled={isSubmitting || isProfileLoading}>
               {isSubmitting ? "Creating..." : "Create Project"}
             </Button>
           </DialogFooter>
