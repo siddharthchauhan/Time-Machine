@@ -12,41 +12,18 @@ export const useTimeEntryForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isProfileLoaded, setIsProfileLoaded] = useState(false);
   const { toast } = useToast();
-  const { profile, supabase, isReady, refreshProfile } = useAuth();
+  const { profile, supabase, isReady, forceRefreshProfile } = useAuth();
   
   // Check if profile is loaded
   useEffect(() => {
-    let isMounted = true;
-    
-    const checkProfileStatus = async () => {
-      if (isReady && profile?.id) {
-        if (isMounted) {
-          setIsProfileLoaded(true);
-          console.log("Profile loaded successfully:", profile.id);
-        }
-      } else if (isReady && !profile?.id) {
-        // Try to refresh the profile if user is authenticated but profile is missing
-        try {
-          const refreshedProfile = await refreshProfile();
-          if (isMounted) {
-            setIsProfileLoaded(!!refreshedProfile?.id);
-            console.log("Profile refresh result:", refreshedProfile ? "success" : "failed");
-          }
-        } catch (error) {
-          console.error("Error refreshing profile:", error);
-          if (isMounted) {
-            setIsProfileLoaded(false);
-          }
-        }
-      }
-    };
-    
-    checkProfileStatus();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, [isReady, profile, refreshProfile]);
+    if (isReady && profile?.id) {
+      setIsProfileLoaded(true);
+      console.log("Profile loaded successfully:", profile.id);
+    } else {
+      setIsProfileLoaded(false);
+      console.log("Profile not loaded:", isReady ? "ready but no profile" : "not ready");
+    }
+  }, [isReady, profile]);
 
   const validateRequiredFields = useCallback(() => {
     if (!selectedProject || !selectedTask) {
@@ -147,6 +124,7 @@ export const useTimeEntryForm = () => {
     isSubmitting,
     isProfileLoaded,
     validateRequiredFields,
-    saveTimeEntry
+    saveTimeEntry,
+    refreshProfile: forceRefreshProfile
   };
 };

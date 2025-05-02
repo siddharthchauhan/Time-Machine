@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import TimeEntryForm from "@/components/time-tracker/TimeEntryForm";
 import TimeEntriesList from "@/components/time-tracker/TimeEntriesList";
@@ -18,18 +18,37 @@ const TimeTracker = () => {
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [databaseError, setDatabaseError] = useState<string | null>(null);
   const { toast } = useToast();
-  const { profile, supabase, isReady } = useAuth();
+  const { profile, supabase, isReady, loadError, forceRefreshProfile } = useAuth();
   
-  useEffect(() => {
-    // Only fetch projects when the profile is loaded
-    if (isReady && profile?.id) {
+  // Function to refresh profile and retry project loading
+  const handleProfileRefresh = useCallback(async () => {
+    const success = await forceRefreshProfile();
+    if (success) {
+      toast({
+        title: "Profile refreshed",
+        description: "Your profile has been successfully loaded.",
+      });
       fetchProjects();
+    } else {
+      toast({
+        title: "Profile refresh failed",
+        description: "Please try signing out and signing back in.",
+        variant: "destructive",
+      });
     }
-  }, [isReady, profile]);
+  }, [forceRefreshProfile, toast]);
   
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     setIsLoadingProjects(true);
     setDatabaseError(null);
+    
+    if (!profile?.id) {
+      console.log("No profile ID available, cannot fetch projects");
+      setIsLoadingProjects(false);
+      setDatabaseError("User profile not loaded. Please refresh your profile.");
+      return;
+    }
+    
     try {
       const { data, error } = await supabase
         .from('projects')
@@ -60,7 +79,7 @@ const TimeTracker = () => {
     } finally {
       setIsLoadingProjects(false);
     }
-  };
+  }, [profile, supabase, toast]);
   
   const fetchTasksForProject = async (projectId: string) => {
     if (!projectId) {
@@ -91,6 +110,17 @@ const TimeTracker = () => {
     }
   };
   
+  useEffect(() => {
+    // Only fetch projects when profile is ready and loaded
+    if (isReady && profile?.id) {
+      console.log("Profile is ready, fetching projects");
+      fetchProjects();
+    } else {
+      console.log("Profile not ready yet, waiting...");
+      setIsLoadingProjects(false);
+    }
+  }, [isReady, profile, fetchProjects]);
+  
   const handleProjectCreated = (newProject: { id: string; name: string }) => {
     console.log("Project created:", newProject);
     setProjects(prevProjects => [...prevProjects, newProject]);
@@ -117,14 +147,6 @@ const TimeTracker = () => {
     });
   };
 
-  const handleRefresh = () => {
-    if (isReady && profile?.id) {
-      fetchProjects();
-    } else {
-      window.location.reload();
-    }
-  };
-
   return (
     <MainLayout>
       <div className="space-y-6 md:space-y-8 animate-fade-in">
@@ -141,6 +163,23 @@ const TimeTracker = () => {
           </div>
         </div>
         
+        {loadError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="flex justify-between items-center">
+              <span>Profile error: {loadError}</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleProfileRefresh}
+                className="ml-2"
+              >
+                <RefreshCw className="h-3.5 w-3.5 mr-1" /> Refresh Profile
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+        
         {databaseError && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
@@ -149,7 +188,7 @@ const TimeTracker = () => {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={handleRefresh}
+                onClick={fetchProjects}
                 className="ml-2"
               >
                 <RefreshCw className="h-3.5 w-3.5 mr-1" /> Retry

@@ -38,23 +38,20 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
     handleStopTracking,
     handleSubmit,
     handleSubmitForApproval,
-    handleReset
+    handleReset,
+    refreshProfile
   } = useTimeEntry(tasks);
   
-  const handleRefreshPage = () => {
-    window.location.reload();
+  const handleProfileRefresh = async () => {
+    const success = await refreshProfile();
+    if (!success) {
+      // If the automatic refresh failed, suggest signing out and back in
+      console.error("Profile refresh failed, user may need to sign out and sign back in");
+    }
   };
 
-  const handleSaveDraft = async () => {
-    const hours = isTracking 
-      ? Number((trackingDuration / 3600).toFixed(2))
-      : Number(manualHours);
-      
-    if (hours <= 0) {
-      return;
-    }
-    
-    const success = await handleSubmit({} as React.FormEvent);
+  const handleSaveDraft = async (e: React.FormEvent) => {
+    await handleSubmit(e);
   };
 
   return (
@@ -71,14 +68,14 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
           <Alert variant="destructive" className="bg-amber-50 border-amber-200">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="flex justify-between items-center">
-              <span>User profile not available. Please refresh the page to load your profile.</span>
+              <span>User profile not available. Please refresh your profile or sign out and back in.</span>
               <Button 
                 variant="outline" 
                 size="sm" 
                 className="ml-2 bg-white" 
-                onClick={handleRefreshPage}
+                onClick={handleProfileRefresh}
               >
-                <RefreshCw className="h-3.5 w-3.5 mr-1" /> Refresh
+                <RefreshCw className="h-3.5 w-3.5 mr-1" /> Refresh Profile
               </Button>
             </AlertDescription>
           </Alert>
