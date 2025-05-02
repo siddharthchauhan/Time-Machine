@@ -19,7 +19,8 @@ export function useTimeEntry(availableTasks: Record<string, Task[]>) {
     isSubmitting,
     isProfileLoaded,
     validateRequiredFields,
-    saveTimeEntry
+    saveTimeEntry,
+    refreshProfile
   } = useTimeEntryForm();
 
   const {
@@ -114,6 +115,7 @@ export function useTimeEntry(availableTasks: Record<string, Task[]>) {
     handleStopTracking,
     handleSubmit,
     handleSubmitForApproval,
-    handleReset
+    handleReset,
+    refreshProfile
   };
 }

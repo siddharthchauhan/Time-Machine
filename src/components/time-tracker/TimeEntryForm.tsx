@@ -43,10 +43,12 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
   } = useTimeEntry(tasks);
   
   const handleProfileRefresh = async () => {
-    const success = await refreshProfile();
-    if (!success) {
-      // If the automatic refresh failed, suggest signing out and back in
-      console.error("Profile refresh failed, user may need to sign out and sign back in");
+    if (refreshProfile) {
+      const success = await refreshProfile();
+      if (!success) {
+        // If the automatic refresh failed, suggest signing out and back in
+        console.error("Profile refresh failed, user may need to sign out and sign back in");
+      }
     }
   };
 
