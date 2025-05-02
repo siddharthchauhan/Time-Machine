@@ -14,24 +14,35 @@ export const useTimeTrackerData = () => {
   // Run profile refresh when component mounts if no profile is available
   useEffect(() => {
     if (!isReady && !profile?.id) {
-      forceRefreshProfile();
+      console.log("Profile not ready on mount, trying to refresh");
+      forceRefreshProfile().catch(error => {
+        console.error("Initial profile refresh failed:", error);
+      });
     }
   }, []);
   
   // Function to refresh profile and retry project loading
   const handleProfileRefresh = useCallback(async () => {
     console.log("Attempting to refresh profile");
-    const success = await forceRefreshProfile();
-    if (success) {
+    try {
+      const success = await forceRefreshProfile();
+      if (success) {
+        toast({
+          title: "Profile refreshed",
+          description: "Your profile has been successfully loaded.",
+        });
+        fetchProjects();
+      } else {
+        toast({
+          title: "Profile refresh failed",
+          description: "Please try signing out and signing back in.",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
       toast({
-        title: "Profile refreshed",
-        description: "Your profile has been successfully loaded.",
-      });
-      fetchProjects();
-    } else {
-      toast({
-        title: "Profile refresh failed",
-        description: "Please try signing out and signing back in.",
+        title: "Profile refresh error",
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
     }

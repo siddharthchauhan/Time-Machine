@@ -1,6 +1,6 @@
 
 import { AlertCircle, RefreshCw } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
 interface TimeTrackerAlertsProps {
@@ -21,34 +21,44 @@ const TimeTrackerAlerts = ({
       {loadError && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="flex justify-between items-center">
-            <span>Profile error: {loadError}</span>
+          <div className="flex justify-between items-center w-full">
+            <div>
+              <AlertTitle>Profile Error</AlertTitle>
+              <AlertDescription>
+                {loadError}
+              </AlertDescription>
+            </div>
             <Button 
               variant="outline" 
               size="sm" 
               onClick={onProfileRefresh}
-              className="ml-2"
+              className="ml-2 whitespace-nowrap"
             >
               <RefreshCw className="h-3.5 w-3.5 mr-1" /> Refresh Profile
             </Button>
-          </AlertDescription>
+          </div>
         </Alert>
       )}
       
       {databaseError && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="flex justify-between items-center">
-            <span>Database error: {databaseError}</span>
+          <div className="flex justify-between items-center w-full">
+            <div>
+              <AlertTitle>Database Error</AlertTitle>
+              <AlertDescription>
+                {databaseError}
+              </AlertDescription>
+            </div>
             <Button 
               variant="outline" 
               size="sm" 
               onClick={onRetryProjects}
-              className="ml-2"
+              className="ml-2 whitespace-nowrap"
             >
               <RefreshCw className="h-3.5 w-3.5 mr-1" /> Retry
             </Button>
-          </AlertDescription>
+          </div>
         </Alert>
       )}
     </>

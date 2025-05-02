@@ -8,6 +8,7 @@ export const useAuth = () => {
   const [isReady, setIsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
@@ -80,28 +81,57 @@ export const useAuth = () => {
     return () => {
       isMounted = false;
     };
-  }, [context.user, context.profile, context.refreshProfile]);
+  }, [context.user, context.profile, context.refreshProfile, retryCount]);
 
   const forceRefreshProfile = async (): Promise<UserProfile | null> => {
     console.log("Force refreshing profile");
     setIsLoading(true);
     setLoadError(null);
     try {
+      // Direct database query as a fallback if the context's refreshProfile fails
+      if (context.user?.id) {
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', context.user.id)
+          .single();
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (profileData) {
+          // Also update the context
+          if (context.refreshProfile) {
+            await context.refreshProfile();
+          }
+          
+          setIsLoading(false);
+          setIsReady(true);
+          console.log("Profile refreshed successfully via direct query:", profileData.id);
+          return profileData as UserProfile;
+        }
+      }
+      
+      // If direct query didn't work, try the context method
       const refreshedProfile = await context.refreshProfile();
       setIsLoading(false);
+      
       if (refreshedProfile?.id) {
         setIsReady(true);
-        console.log("Profile refreshed successfully:", refreshedProfile.id);
+        console.log("Profile refreshed successfully via context:", refreshedProfile.id);
         return refreshedProfile;
       } else {
         setLoadError("Could not refresh profile data");
         console.error("Profile refresh returned no data");
+        setRetryCount(prev => prev + 1); // Increment retry counter to trigger the useEffect
         return null;
       }
     } catch (error: any) {
       console.error("Error in forceRefreshProfile:", error);
       setLoadError(error.message || "Error refreshing profile");
       setIsLoading(false);
+      setRetryCount(prev => prev + 1); // Increment retry counter to trigger the useEffect
       return null;
     }
   };

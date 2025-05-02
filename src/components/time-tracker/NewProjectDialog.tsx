@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import BasicProjectInfo from "@/components/projects/form/BasicProjectInfo";
 import { ProjectFormValues } from "@/components/projects/ProjectModel";
 import { useAuth } from "@/hooks/use-auth";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 type NewProjectDialogProps = {
   onProjectCreated: (project: { id: string; name: string }) => void;
@@ -20,6 +21,7 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
     status: "active"
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const { toast } = useToast();
   const { supabase, profile, isReady, loadError, forceRefreshProfile } = useAuth();
@@ -28,12 +30,17 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
   useEffect(() => {
     if (open) {
       if (!profile?.id) {
+        setIsRefreshing(true);
         forceRefreshProfile().then(refreshedProfile => {
+          setIsRefreshing(false);
           if (!refreshedProfile) {
             setProfileError("Unable to load profile. Please refresh and try again.");
           } else {
             setProfileError(null);
           }
+        }).catch(error => {
+          setIsRefreshing(false);
+          setProfileError("Error refreshing profile: " + (error.message || "Unknown error"));
         });
       } else {
         setProfileError(null);
@@ -42,19 +49,30 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
   }, [open, profile, forceRefreshProfile]);
 
   const handleRefresh = async () => {
-    const success = await forceRefreshProfile();
-    if (success) {
-      setProfileError(null);
+    setIsRefreshing(true);
+    try {
+      const success = await forceRefreshProfile();
+      if (success) {
+        setProfileError(null);
+        toast({
+          title: "Profile refreshed",
+          description: "Your profile has been successfully loaded.",
+        });
+      } else {
+        toast({
+          title: "Profile refresh failed",
+          description: "Could not load your profile data. Please try signing out and back in.",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
       toast({
-        title: "Profile refreshed",
-        description: "Your profile has been successfully loaded.",
-      });
-    } else {
-      toast({
-        title: "Profile refresh failed",
-        description: "Could not load your profile data. Please try signing out and back in.",
+        title: "Profile refresh error",
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -159,19 +177,25 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
               onChange={handleChange}
             />
             {profileError && (
-              <div className="text-sm text-amber-500 bg-amber-50 p-3 rounded flex items-center justify-between">
-                <span>{profileError}</span>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleRefresh}
-                  className="ml-2 h-7"
-                >
-                  <RefreshCcw className="h-3.5 w-3.5 mr-1" />
-                  Refresh
-                </Button>
-              </div>
+              <Alert variant="warning" className="bg-amber-50 border-amber-200">
+                <AlertTitle className="text-amber-600">Unable to load profile</AlertTitle>
+                <div className="flex items-center justify-between">
+                  <AlertDescription className="text-amber-600">
+                    {profileError}
+                  </AlertDescription>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleRefresh}
+                    className="ml-2 h-7"
+                    disabled={isRefreshing}
+                  >
+                    <RefreshCcw className={`h-3.5 w-3.5 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                  </Button>
+                </div>
+              </Alert>
             )}
           </div>
           <DialogFooter>
@@ -179,11 +203,14 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
               type="button" 
               variant="outline" 
               onClick={() => setOpen(false)}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isRefreshing}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || !!profileError}>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || !!profileError || isRefreshing}
+            >
               {isSubmitting ? "Creating..." : "Create Project"}
             </Button>
           </DialogFooter>

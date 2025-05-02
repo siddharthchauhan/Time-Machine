@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,9 +24,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [authFlowState, setAuthFlowState] = useState('signIn');
   const { toast } = useToast();
 
-  // Function to fetch user profile
+  // Function to fetch user profile with better error handling
   const fetchProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
+      console.log("Fetching profile for user ID:", userId);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -36,8 +37,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
       if (error) {
         console.error("Error fetching profile:", error);
+        
+        // Check if it's a "not found" error and create a new profile
+        if (error.code === 'PGRST116') {
+          console.log("Profile not found, attempting to create one");
+          
+          // Get user details to create a new profile
+          const { data: userData, error: userError } = await supabase.auth.getUser();
+          
+          if (!userError && userData.user) {
+            const { data: newProfile, error: createError } = await supabase
+              .from('profiles')
+              .insert({
+                id: userId,
+                email: userData.user.email,
+                full_name: userData.user.user_metadata?.full_name || userData.user.email,
+                role: 'employee'
+              })
+              .select('*')
+              .single();
+              
+            if (!createError && newProfile) {
+              console.log("Created new profile:", newProfile);
+              return newProfile;
+            } else {
+              console.error("Error creating new profile:", createError);
+            }
+          }
+        }
+        
         toast({
-          title: "Database Error",
+          title: "Profile Error",
           description: "Could not fetch your profile data. Please try again later.",
           variant: "destructive"
         });
@@ -67,9 +97,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log("Profile refresh successful:", profileData);
         setProfile(profileData);
         return profileData;
+      } else {
+        // Try one more time with a direct insert as a final fallback
+        if (user.email) {
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert({
+              id: user.id,
+              email: user.email,
+              full_name: user.user_metadata?.full_name || user.email,
+              role: 'employee'
+            })
+            .select('*')
+            .single();
+            
+          if (!createError && newProfile) {
+            console.log("Created new profile as last resort:", newProfile);
+            setProfile(newProfile);
+            return newProfile;
+          }
+        }
+        
+        console.log("Profile refresh failed, no data returned");
+        return null;
       }
-      console.log("Profile refresh failed, no data returned");
-      return null;
     } catch (error) {
       console.error("Error refreshing profile:", error);
       return null;
@@ -99,6 +150,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               if (profileData && isMounted) {
                 setProfile(profileData);
               } else if (isMounted) {
+                // Create minimal profile if not found
                 setProfile({ id: currentSession.user.id, email: currentSession.user.email });
               }
             } catch (error) {
