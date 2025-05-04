@@ -1,65 +1,32 @@
 
-import { useEffect } from "react";
-import { useNavigate, useLocation, Routes, Route, Navigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import LoginForm from "@/components/auth/LoginForm";
-import SignupForm from "@/components/auth/SignupForm";
-import { useAuth } from "@/hooks/use-auth";
+import { useNavigate } from "react-router-dom";
 
 export default function Auth() {
-  const {
-    user,
-    isLoading
-  } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const from = location.state?.from?.pathname || "/";
   
-  useEffect(() => {
-    // If user is logged in, redirect to home or the page they were trying to access
-    if (user && !isLoading) {
-      console.log("Auth: User is authenticated, redirecting to:", from);
-      navigate(from, {
-        replace: true
-      });
-    }
-  }, [user, isLoading, navigate, from]);
-
-  // If still loading or user exists, show loading state to prevent flash of login form
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>;
-  }
-  
-  // If user is already authenticated but waiting for redirect, show loading
-  if (user) {
-    return <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        <div className="ml-3">Redirecting...</div>
-      </div>;
-  }
-  
-  return <div className="flex items-center justify-center min-h-screen bg-muted/40">
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-muted/40">
       <div className="w-full max-w-md p-4">
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Time Machine</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">Authentication Disabled</CardTitle>
             <CardDescription className="text-center">
-              <Routes>
-                <Route path="/" element={<span>Login to your account</span>} />
-                <Route path="signup" element={<span>Create a new account</span>} />
-              </Routes>
+              Authentication has been temporarily removed from this application
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Routes>
-              <Route path="/" element={<LoginForm />} />
-              <Route path="signup" element={<SignupForm />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+          <CardContent className="flex flex-col items-center">
+            <p className="text-center mb-4">
+              The application is currently running in development mode with authentication disabled.
+              All protected routes are accessible without login.
+            </p>
+            <Button onClick={() => navigate('/')}>
+              Go to Home Page
+            </Button>
           </CardContent>
         </Card>
       </div>
-    </div>;
+    </div>
+  );
 }

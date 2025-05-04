@@ -15,8 +15,7 @@ import Clients from "./pages/Clients";
 import Projects from "./pages/Projects";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
-import { StrictMode, useState } from "react";
-import { AuthProvider, RequireAuth } from "./components/auth/AuthProvider";
+import { StrictMode } from "react";
 import { ThemeProvider } from "./components/theme/ThemeProvider";
 
 // Configure query client with error handling for database connections
@@ -52,22 +51,19 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <AuthProvider>
-                <Routes>
-                  <Route path="/auth/*" element={<Auth />} />
-                  
-                  <Route path="/" element={<RequireAuth><Index /></RequireAuth>} />
-                  <Route path="/time-tracker" element={<RequireAuth><TimeTracker /></RequireAuth>} />
-                  <Route path="/approvals" element={<RequireAuth><Approvals /></RequireAuth>} />
-                  <Route path="/team" element={<RequireAuth><Team /></RequireAuth>} />
-                  <Route path="/clients" element={<RequireAuth><Clients /></RequireAuth>} />
-                  <Route path="/projects" element={<RequireAuth><Projects /></RequireAuth>} />
-                  <Route path="/reports" element={<RequireAuth><Reports /></RequireAuth>} />
-                  <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
-                  <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </AuthProvider>
+              <Routes>
+                <Route path="/auth/*" element={<Auth />} />
+                <Route path="/" element={<Index />} />
+                <Route path="/time-tracker" element={<TimeTracker />} />
+                <Route path="/approvals" element={<Approvals />} />
+                <Route path="/team" element={<Team />} />
+                <Route path="/clients" element={<Clients />} />
+                <Route path="/projects" element={<Projects />} />
+                <Route path="/reports" element={<Reports />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
             </BrowserRouter>
           </div>
         </ThemeProvider>
