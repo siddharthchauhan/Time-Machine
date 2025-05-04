@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -46,19 +45,18 @@ export default function SignupForm() {
     setAuthError(null);
     
     try {
-      const response = await signUp(values.email, values.password, values.fullName);
+      const result = await signUp(values.email, values.password, values.fullName);
       
-      if (response && response.error) {
-        setAuthError(response.error.message || "Registration failed. Please try again with different credentials.");
-        return;
+      if (result && result.error) {
+        setAuthError(result.error.message || "Registration failed. Please try again with different credentials.");
+      } else {
+        toast({
+          title: "Registration successful",
+          description: "Please check your email for a confirmation link",
+        });
+        
+        navigate("/auth");
       }
-      
-      toast({
-        title: "Registration successful",
-        description: "Please check your email for a confirmation link",
-      });
-      
-      navigate("/auth");
     } catch (error: any) {
       setAuthError(error.message || "An unexpected error occurred. Please try again.");
     } finally {

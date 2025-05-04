@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -41,19 +40,18 @@ export default function LoginForm() {
     setAuthError(null);
     
     try {
-      const response = await signIn(values.email, values.password);
+      const result = await signIn(values.email, values.password);
       
-      if (response && response.error) {
-        setAuthError(response.error.message || "Login failed. Please check your credentials and try again.");
-        return;
+      if (result && result.error) {
+        setAuthError(result.error.message || "Login failed. Please check your credentials and try again.");
+      } else {
+        toast({
+          title: "Login successful",
+          description: "Welcome back!"
+        });
+        
+        navigate("/");
       }
-      
-      toast({
-        title: "Login successful",
-        description: "Welcome back!"
-      });
-      
-      navigate("/");
     } catch (error: any) {
       setAuthError(error.message || "An unexpected error occurred. Please try again.");
     } finally {

@@ -138,22 +138,19 @@ export const useAuthProvider = () => {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
-        toast({
-          title: "Sign in failed",
-          description: error.message,
-          variant: "destructive"
-        });
+        console.error("Sign in error:", error);
         return { error };
       }
       
       return { data, error: null };
     } catch (error: any) {
-      toast({
-        title: "Connection Error",
-        description: "Could not connect to authentication service. Please try again.",
-        variant: "destructive"
-      });
-      return { error };
+      console.error("Exception in signIn:", error);
+      return { 
+        data: null, 
+        error: { 
+          message: error.message || "Could not connect to authentication service. Please try again." 
+        } 
+      };
     }
   };
 
@@ -170,21 +167,19 @@ export const useAuthProvider = () => {
       });
       
       if (error) {
-        toast({
-          title: "Sign up failed",
-          description: error.message,
-          variant: "destructive"
-        });
+        console.error("Sign up error:", error);
+        return { error };
       }
       
-      return { data, error };
+      return { data, error: null };
     } catch (error: any) {
-      toast({
-        title: "Connection Error",
-        description: "Could not connect to authentication service. Please try again.",
-        variant: "destructive"
-      });
-      return { error };
+      console.error("Exception in signUp:", error);
+      return { 
+        data: null, 
+        error: { 
+          message: error.message || "Could not connect to authentication service. Please try again." 
+        } 
+      };
     }
   };
 
