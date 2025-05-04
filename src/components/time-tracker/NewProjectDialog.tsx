@@ -23,7 +23,10 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
     handleSubmit,
     handleRefresh
   } = useProjectForm({ 
-    onProjectCreated, 
+    onProjectCreated: (project) => {
+      onProjectCreated(project);
+      setOpen(false);
+    }, 
     onClose: () => setOpen(false) 
   });
 

@@ -3,7 +3,7 @@ import NewTaskDialog from "./NewTaskDialog";
 import NewProjectDialog from "./NewProjectDialog";
 import BatchTaskCreationDialog from "./BatchTaskCreationDialog";
 import { useAuth } from "@/hooks/use-auth";
-import { isManager, canCreateTasks, canCreateProjects } from "@/lib/permissions";
+import { isAuthenticated, canCreateTasks, canCreateProjects } from "@/lib/permissions";
 
 interface TimeTrackerHeaderProps {
   projects: any[];

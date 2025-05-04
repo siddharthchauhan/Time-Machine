@@ -104,7 +104,33 @@ export const useProjectForm = ({ onProjectCreated, onClose }: UseProjectFormProp
     try {
       console.log("Creating project with user ID:", profile.id);
       
-      // Insert the project into the database
+      // Handle the mock guest user specially to avoid UUID errors
+      if (profile.id === 'guest') {
+        // For the guest user, we'll create a mock project with a generated ID
+        const mockProjectId = crypto.randomUUID();
+        
+        // Notify the parent component about the new project
+        onProjectCreated({
+          id: mockProjectId,
+          name: formValues.name,
+        });
+        
+        toast({
+          title: "Project created",
+          description: `${formValues.name} has been created successfully`,
+        });
+        
+        // Reset form
+        setFormValues({
+          name: "",
+          description: "",
+          status: "active"
+        });
+        onClose();
+        return;
+      }
+      
+      // For real users, insert the project into the database
       const { data, error } = await supabase
         .from('projects')
         .insert({
