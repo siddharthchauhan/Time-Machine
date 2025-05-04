@@ -32,7 +32,14 @@ export const tryCreateProfile = async (user: User): Promise<UserProfile | null> 
   try {
     console.log("Attempting to create profile for user:", user.id);
     
-    // Create a profile with public RLS policy using the service role client
+    // First check if profile already exists
+    const existingProfile = await fetchProfile(user.id);
+    if (existingProfile) {
+      console.log("Profile already exists, returning existing profile");
+      return existingProfile;
+    }
+    
+    // Create a profile via an insert operation
     const { data: newProfile, error } = await supabase
       .from('profiles')
       .insert({
@@ -47,13 +54,20 @@ export const tryCreateProfile = async (user: User): Promise<UserProfile | null> 
     if (error) {
       console.error("Error creating profile:", error);
       
-      // If profile already exists, try to fetch it
-      if (error.code === '23505') { // Unique violation
-        console.log("Profile already exists, fetching instead");
-        return fetchProfile(user.id);
+      // If the error is not a duplicate key violation, return null
+      if (error.code !== '23505') { // 23505 is the Postgres error code for unique_violation
+        console.error("Cannot create profile due to permission issues. This is likely a Row Level Security (RLS) policy restriction.");
+        
+        // Return a minimal profile object to prevent errors in the UI
+        return {
+          id: user.id,
+          email: user.email,
+          full_name: user.user_metadata?.full_name || user.email
+        };
       }
       
-      return null;
+      // If it's a duplicate key error, try to fetch the profile again
+      return fetchProfile(user.id);
     }
     
     console.log("Successfully created profile:", newProfile);

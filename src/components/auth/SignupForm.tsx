@@ -15,7 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Lock, Mail, User } from "lucide-react";
 import { AuthError } from "./AuthError";
 
@@ -59,13 +59,11 @@ export default function SignupForm() {
         setSignupSuccess(true);
         toast({
           title: "Registration successful",
-          description: "Your account has been created. You can now sign in.",
+          description: "Your account has been created. You will be automatically signed in.",
         });
         
-        // Redirect to login page after a delay
-        setTimeout(() => {
-          navigate("/auth");
-        }, 2000);
+        // The redirect will happen automatically via the Auth page's useEffect
+        // when the auth state changes and a user object is created
       }
     } catch (error: any) {
       setAuthError(error.message || "An unexpected error occurred. Please try again.");
@@ -86,7 +84,7 @@ export default function SignupForm() {
       {signupSuccess && (
         <div className="bg-green-100 border border-green-200 text-green-800 rounded-lg p-4 mb-6">
           <p className="font-medium">Registration successful!</p>
-          <p className="text-sm">Redirecting you to the login page...</p>
+          <p className="text-sm">You'll be redirected to the main page shortly...</p>
         </div>
       )}
       

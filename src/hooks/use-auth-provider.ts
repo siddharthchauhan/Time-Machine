@@ -22,16 +22,17 @@ export const useAuthProvider = () => {
   } = useAuthState();
 
   const { profileLoading, refreshProfile } = useProfileManagement(user, setProfile);
-  const { signIn, signUp, signOut } = useAuthActions(user);
+  const { signIn, signUp, signOut } = useAuthActions(user, setProfile);
 
   // Load profile data when user is set but profile is not yet attempted
   useEffect(() => {
     let isMounted = true;
 
     const loadUserProfile = async () => {
-      if (user && !profile && profileAttempted) {
+      if (user && !profile && !profileAttempted) {
         try {
           console.log("Loading profile for user:", user.id);
+          setProfileAttempted(true);
           const profileData = await fetchProfile(user.id);
           
           if (profileData && isMounted) {
@@ -63,7 +64,7 @@ export const useAuthProvider = () => {
     return () => {
       isMounted = false;
     };
-  }, [user, profile, profileAttempted]);
+  }, [user, profile, profileAttempted, setProfile, setProfileAttempted]);
 
   return {
     session,
