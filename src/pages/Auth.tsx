@@ -18,6 +18,7 @@ export default function Auth() {
   useEffect(() => {
     // If user is logged in, redirect to home or the page they were trying to access
     if (user && !isLoading) {
+      console.log("Auth: User is authenticated, redirecting to:", from);
       navigate(from, {
         replace: true
       });
@@ -25,9 +26,17 @@ export default function Auth() {
   }, [user, isLoading, navigate, from]);
 
   // If still loading or user exists, show loading state to prevent flash of login form
-  if (isLoading || user) {
+  if (isLoading) {
     return <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>;
+  }
+  
+  // If user is already authenticated but waiting for redirect, show loading
+  if (user) {
+    return <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="ml-3">Redirecting...</div>
       </div>;
   }
   

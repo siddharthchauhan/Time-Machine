@@ -1,4 +1,3 @@
-
 import { useContext, useEffect, useState } from 'react';
 import { AuthContext, UserProfile } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,6 +18,7 @@ export const useAuth = () => {
     let isMounted = true;
     
     const checkProfile = async () => {
+      console.log("checkProfile running with user:", context.user?.id);
       setIsLoading(true);
       setLoadError(null);
       

@@ -48,6 +48,7 @@ export const useAuthProvider = () => {
     
     const initializeAuth = async () => {
       try {
+        console.log("Initializing auth state...");
         // First check for existing session
         const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
         
@@ -58,6 +59,12 @@ export const useAuthProvider = () => {
         }
         
         if (isMounted) {
+          if (currentSession?.user) {
+            console.log("Session found during initialization:", currentSession.user.id);
+          } else {
+            console.log("No session found during initialization");
+          }
+          
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
           
@@ -66,9 +73,11 @@ export const useAuthProvider = () => {
             const profileData = await fetchProfile(currentSession.user.id);
             
             if (profileData && isMounted) {
+              console.log("Profile loaded during initialization:", profileData.id);
               setProfile(profileData);
             } else if (isMounted) {
               // Create a minimal profile if not found
+              console.log("Creating minimal profile during initialization");
               setProfile({ id: currentSession.user.id, email: currentSession.user.email });
             }
           }
@@ -79,7 +88,7 @@ export const useAuthProvider = () => {
         // Then set up auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, newSession) => {
-            console.log("Auth state change:", event);
+            console.log("Auth state change:", event, newSession?.user?.id);
             
             if (!isMounted) return;
             
@@ -95,15 +104,18 @@ export const useAuthProvider = () => {
                 const profileData = await fetchProfile(newSession.user.id);
                 
                 if (profileData && isMounted) {
+                  console.log("Profile loaded after auth state change:", profileData.id);
                   setProfile(profileData);
                 } else if (isMounted) {
                   // Create minimal profile if not found
+                  console.log("Creating minimal profile after auth state change");
                   setProfile({ id: newSession.user.id, email: newSession.user.email });
                 }
               } catch (error) {
                 console.error("Error fetching profile in auth state change:", error);
               }
             } else if (isMounted) {
+              console.log("Setting profile to null after auth state change");
               setProfile(null);
               setProfileAttempted(false);
             }
@@ -135,6 +147,7 @@ export const useAuthProvider = () => {
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log("Attempting sign in for email:", email);
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
@@ -142,6 +155,7 @@ export const useAuthProvider = () => {
         return { error };
       }
       
+      console.log("Sign in successful for user:", data.user?.id);
       return { data, error: null };
     } catch (error: any) {
       console.error("Exception in signIn:", error);
@@ -156,6 +170,7 @@ export const useAuthProvider = () => {
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
+      console.log("Attempting sign up for email:", email);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -171,6 +186,7 @@ export const useAuthProvider = () => {
         return { error };
       }
       
+      console.log("Sign up successful for user:", data.user?.id);
       return { data, error: null };
     } catch (error: any) {
       console.error("Exception in signUp:", error);
@@ -185,6 +201,7 @@ export const useAuthProvider = () => {
 
   const signOut = async () => {
     try {
+      console.log("Signing out user");
       await supabase.auth.signOut();
     } catch (error) {
       console.error("Error signing out:", error);

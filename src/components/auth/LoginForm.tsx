@@ -45,12 +45,12 @@ export default function LoginForm() {
       if (result && result.error) {
         setAuthError(result.error.message || "Login failed. Please check your credentials and try again.");
       } else {
+        // Note: The redirect will happen automatically via useEffect in the Auth component
+        // when the user state updates, so we don't need to navigate here
         toast({
           title: "Login successful",
           description: "Welcome back!"
         });
-        
-        navigate("/");
       }
     } catch (error: any) {
       setAuthError(error.message || "An unexpected error occurred. Please try again.");
