@@ -16,6 +16,12 @@ interface SidebarProps {
 const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }: SidebarProps) => {
   const location = useLocation();
 
+  const handleToggleSidebar = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSidebarCollapsed(!sidebarCollapsed);
+  };
+
   return (
     <aside 
       className={cn(
@@ -57,8 +63,9 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }: SidebarProps) => {
         <Button 
           variant="ghost" 
           size="icon"
-          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="text-sidebar-foreground hover:bg-white/10 absolute top-16 -right-5 rounded-full bg-sidebar shadow-md"
+          type="button"
+          onClick={handleToggleSidebar}
+          className="text-sidebar-foreground hover:bg-white/10 absolute top-16 -right-5 rounded-full bg-sidebar shadow-md z-50"
         >
           <Menu className="h-4 w-4" />
         </Button>
