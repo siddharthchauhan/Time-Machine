@@ -135,15 +135,18 @@ export const useAuthProvider = () => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      
       if (error) {
         toast({
           title: "Sign in failed",
           description: error.message,
           variant: "destructive"
         });
+        return { error };
       }
-      return { error };
+      
+      return { data, error: null };
     } catch (error: any) {
       toast({
         title: "Connection Error",

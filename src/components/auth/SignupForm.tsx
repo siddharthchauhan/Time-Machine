@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +17,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/components/ui/use-toast";
 import { Lock, Mail, User } from "lucide-react";
+import { AuthError } from "./AuthError";
 
 const formSchema = z.object({
   fullName: z.string().min(2, { message: "Full name must be at least 2 characters" }),
@@ -26,6 +28,7 @@ const formSchema = z.object({
 export default function SignupForm() {
   const { signUp } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -40,12 +43,14 @@ export default function SignupForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
+    setAuthError(null);
     
     try {
       const response = await signUp(values.email, values.password, values.fullName);
       
       if (response && response.error) {
-        throw response.error;
+        setAuthError(response.error.message || "Registration failed. Please try again with different credentials.");
+        return;
       }
       
       toast({
@@ -55,11 +60,7 @@ export default function SignupForm() {
       
       navigate("/auth");
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Registration failed",
-        description: error.message || "Please try again with different credentials",
-      });
+      setAuthError(error.message || "An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -71,6 +72,8 @@ export default function SignupForm() {
         <h1 className="text-3xl font-bold mb-2">Create an account</h1>
         <p className="text-muted-foreground">Enter your information to get started</p>
       </div>
+      
+      {authError && <AuthError message={authError} />}
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 w-full max-w-md">
