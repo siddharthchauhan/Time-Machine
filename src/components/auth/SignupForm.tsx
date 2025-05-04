@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,10 +42,10 @@ export default function SignupForm() {
     setIsLoading(true);
     
     try {
-      const { error } = await signUp(values.email, values.password, values.fullName);
+      const response = await signUp(values.email, values.password, values.fullName);
       
-      if (error) {
-        throw error;
+      if (response && response.error) {
+        throw response.error;
       }
       
       toast({

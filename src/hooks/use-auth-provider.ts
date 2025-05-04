@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -182,7 +181,7 @@ export const useAuthProvider = () => {
         description: "Could not connect to authentication service. Please try again.",
         variant: "destructive"
       });
-      return { data: null, error };
+      return { error };
     }
   };
 
