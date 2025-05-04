@@ -1,217 +1,64 @@
-import { useState, useEffect } from 'react';
-import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
-import { UserProfile } from '@/lib/auth';
-import { useToast } from '@/hooks/use-toast';
+
+import { useEffect } from 'react';
+import { useAuthState } from './auth/use-auth-state';
+import { useProfileManagement } from './auth/use-profile-management';
+import { useAuthActions } from './auth/use-auth-actions';
 import { fetchProfile, tryCreateProfile } from '@/lib/auth-utils';
 
+/**
+ * Main auth provider hook that combines auth state, profile management, and auth actions
+ */
 export const useAuthProvider = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [profileAttempted, setProfileAttempted] = useState(false);
-  const [authFlowState, setAuthFlowState] = useState('signIn');
-  const { toast } = useToast();
+  const {
+    isLoading,
+    session,
+    user,
+    profile,
+    setProfile,
+    profileAttempted,
+    setProfileAttempted,
+    authFlowState,
+    setAuthFlowState
+  } = useAuthState();
 
-  const refreshProfile = async (): Promise<UserProfile | null> => {
-    if (!user?.id) return null;
-    
-    try {
-      console.log("Refreshing profile for user ID:", user.id);
-      const profileData = await fetchProfile(user.id);
-      if (profileData) {
-        console.log("Profile refresh successful:", profileData);
-        setProfile(profileData);
-        return profileData;
-      } else {
-        // Try one more time with a direct insert as a final fallback
-        if (user.email) {
-          const newProfile = await tryCreateProfile(user);
-          if (newProfile) {
-            setProfile(newProfile);
-            return newProfile;
-          }
-        }
-        
-        console.log("Profile refresh failed, no data returned");
-        return null;
-      }
-    } catch (error) {
-      console.error("Error refreshing profile:", error);
-      return null;
-    }
-  };
+  const { profileLoading, refreshProfile } = useProfileManagement(user, setProfile);
+  const { signIn, signUp, signOut } = useAuthActions(user);
 
+  // Load profile data when user is set but profile is not yet attempted
   useEffect(() => {
     let isMounted = true;
-    
-    const initializeAuth = async () => {
-      try {
-        console.log("Initializing auth state...");
-        // First check for existing session
-        const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error("Error getting session:", sessionError);
-          if (isMounted) setIsLoading(false);
-          return;
-        }
-        
-        if (isMounted) {
-          if (currentSession?.user) {
-            console.log("Session found during initialization:", currentSession.user.id);
-          } else {
-            console.log("No session found during initialization");
-          }
+
+    const loadUserProfile = async () => {
+      if (user && !profile && profileAttempted) {
+        try {
+          console.log("Loading profile for user:", user.id);
+          const profileData = await fetchProfile(user.id);
           
-          setSession(currentSession);
-          setUser(currentSession?.user ?? null);
-          
-          if (currentSession?.user) {
-            setProfileAttempted(true);
-            const profileData = await fetchProfile(currentSession.user.id);
-            
-            if (profileData && isMounted) {
-              console.log("Profile loaded during initialization:", profileData.id);
-              setProfile(profileData);
-            } else if (isMounted) {
-              // Create a minimal profile if not found
-              console.log("Creating minimal profile during initialization");
-              setProfile({ id: currentSession.user.id, email: currentSession.user.email });
+          if (profileData && isMounted) {
+            console.log("Profile loaded:", profileData.id);
+            setProfile(profileData);
+          } else if (isMounted && user.email) {
+            // Create a minimal profile if not found
+            console.log("Creating minimal profile on load");
+            const newProfile = await tryCreateProfile(user);
+            if (newProfile) {
+              setProfile(newProfile);
+            } else {
+              setProfile({ id: user.id, email: user.email });
             }
           }
-          
-          setIsLoading(false);
-        }
-        
-        // Then set up auth state listener
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (event, newSession) => {
-            console.log("Auth state change:", event, newSession?.user?.id);
-            
-            if (!isMounted) return;
-            
-            setSession(newSession);
-            setUser(newSession?.user ?? null);
-            
-            if (newSession?.user) {
-              // Mark that we've attempted to fetch the profile
-              setProfileAttempted(true);
-              
-              // Fetch user profile immediately after auth state change
-              try {
-                const profileData = await fetchProfile(newSession.user.id);
-                
-                if (profileData && isMounted) {
-                  console.log("Profile loaded after auth state change:", profileData.id);
-                  setProfile(profileData);
-                } else if (isMounted) {
-                  // Create minimal profile if not found
-                  console.log("Creating minimal profile after auth state change");
-                  setProfile({ id: newSession.user.id, email: newSession.user.email });
-                }
-              } catch (error) {
-                console.error("Error fetching profile in auth state change:", error);
-              }
-            } else if (isMounted) {
-              console.log("Setting profile to null after auth state change");
-              setProfile(null);
-              setProfileAttempted(false);
-            }
-          }
-        );
-        
-        return () => {
-          subscription.unsubscribe();
-        };
-      } catch (error) {
-        console.error("Error initializing auth:", error);
-        toast({
-          title: "Connection Error",
-          description: "Failed to initialize authentication. Please refresh the page.",
-          variant: "destructive"
-        });
-        if (isMounted) {
-          setIsLoading(false);
+        } catch (error) {
+          console.error("Error loading user profile:", error);
         }
       }
     };
 
-    initializeAuth();
+    loadUserProfile();
 
     return () => {
       isMounted = false;
     };
-  }, []);
-
-  const signIn = async (email: string, password: string) => {
-    try {
-      console.log("Attempting sign in for email:", email);
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      
-      if (error) {
-        console.error("Sign in error:", error);
-        return { error };
-      }
-      
-      console.log("Sign in successful for user:", data.user?.id);
-      return { data, error: null };
-    } catch (error: any) {
-      console.error("Exception in signIn:", error);
-      return { 
-        data: null, 
-        error: { 
-          message: error.message || "Could not connect to authentication service. Please try again." 
-        } 
-      };
-    }
-  };
-
-  const signUp = async (email: string, password: string, fullName: string) => {
-    try {
-      console.log("Attempting sign up for email:", email);
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName
-          }
-        }
-      });
-      
-      if (error) {
-        console.error("Sign up error:", error);
-        return { error };
-      }
-      
-      console.log("Sign up successful for user:", data.user?.id);
-      return { data, error: null };
-    } catch (error: any) {
-      console.error("Exception in signUp:", error);
-      return { 
-        data: null, 
-        error: { 
-          message: error.message || "Could not connect to authentication service. Please try again." 
-        } 
-      };
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      console.log("Signing out user");
-      await supabase.auth.signOut();
-    } catch (error) {
-      console.error("Error signing out:", error);
-      toast({
-        title: "Sign out failed",
-        description: "Could not sign out. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
+  }, [user, profile, profileAttempted]);
 
   return {
     session,
