@@ -48,25 +48,22 @@ export default function SignupForm() {
     setSignupSuccess(false);
     
     try {
-      const result = await signUp(values.email, values.password, values.fullName);
+      // With auth disabled, we simulate a successful signup
+      const result = await signUp();
       
-      if (result && result.error) {
-        setAuthError(result.error.message || "Registration failed. Please try again with different credentials.");
-      } else {
-        // Clear the form on success
-        form.reset();
-        
-        setSignupSuccess(true);
-        toast({
-          title: "Registration successful",
-          description: "Your account has been created. You will be automatically signed in.",
-        });
-        
-        // The redirect will happen automatically via the Auth page's useEffect
-        // when the auth state changes and a user object is created
-      }
+      // Clear the form on success
+      form.reset();
+      
+      setSignupSuccess(true);
+      toast({
+        title: "Authentication Disabled",
+        description: "Account creation is currently disabled. All routes are accessible without authentication.",
+      });
+      
+      // Navigate to home after a short delay
+      setTimeout(() => navigate('/'), 1500);
     } catch (error: any) {
-      setAuthError(error.message || "An unexpected error occurred. Please try again.");
+      setAuthError("Authentication is currently disabled.");
     } finally {
       setIsLoading(false);
     }
