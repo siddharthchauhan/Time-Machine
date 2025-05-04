@@ -44,7 +44,12 @@ export const useAuthProvider = () => {
             if (newProfile) {
               setProfile(newProfile);
             } else {
-              setProfile({ id: user.id, email: user.email });
+              console.log("Creating default profile from user data");
+              setProfile({ 
+                id: user.id, 
+                email: user.email,
+                full_name: user.user_metadata?.full_name || user.email 
+              });
             }
           }
         } catch (error) {

@@ -2,7 +2,7 @@
 import { User } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchProfile } from '@/lib/auth-utils';
+import { fetchProfile, tryCreateProfile } from '@/lib/auth-utils';
 
 /**
  * Custom hook to handle authentication actions like sign-in, sign-up, and sign-out
@@ -58,6 +58,18 @@ export const useAuthActions = (user: User | null) => {
       }
       
       console.log("Sign up successful for user:", data.user?.id);
+      
+      // After successful signup, try to create a profile immediately
+      if (data.user) {
+        console.log("Creating profile for new user");
+        const profile = await tryCreateProfile(data.user);
+        if (profile) {
+          console.log("Profile created successfully", profile);
+        } else {
+          console.warn("Could not create profile immediately after signup");
+        }
+      }
+      
       return { data, error: null };
     } catch (error: any) {
       console.error("Exception in signUp:", error);
