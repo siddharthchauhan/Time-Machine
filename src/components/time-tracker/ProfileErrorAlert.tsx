@@ -22,13 +22,10 @@ const ProfileErrorAlert = ({
           {errorMessage}
         </AlertDescription>
         <Button 
+          type="button" 
           variant="outline" 
           size="sm" 
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onRefresh();
-          }}
+          onClick={onRefresh}
           className="ml-2 h-7"
           disabled={isRefreshing}
         >
