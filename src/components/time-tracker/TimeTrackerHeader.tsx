@@ -20,8 +20,8 @@ const TimeTrackerHeader = ({
   onBatchTasksCreated = () => {}
 }: TimeTrackerHeaderProps) => {
   const { profile } = useAuth();
-  const userCanCreateProjects = canCreateProjects(profile);
-  const userCanCreateTasks = canCreateTasks(profile);
+  const userCanCreateProjects = profile ? canCreateProjects(profile) : false;
+  const userCanCreateTasks = profile ? canCreateTasks(profile) : false;
 
   return (
     <div className="flex justify-between items-center">

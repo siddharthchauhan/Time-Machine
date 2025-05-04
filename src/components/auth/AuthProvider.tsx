@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
         
       if (error) {
         console.error("Error fetching profile:", error);
@@ -130,52 +130,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     let isMounted = true;
     
-    // Set up auth state listener first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
-        console.log("Auth state change:", event);
-        
-        if (isMounted) {
-          setSession(currentSession);
-          setUser(currentSession?.user ?? null);
-        
-          if (currentSession?.user) {
-            // Mark that we've attempted to fetch the profile
-            setProfileAttempted(true);
-            
-            // Fetch user profile immediately after auth state change
-            try {
-              const profileData = await fetchProfile(currentSession.user.id);
-              
-              if (profileData && isMounted) {
-                setProfile(profileData);
-              } else if (isMounted) {
-                // Create minimal profile if not found
-                setProfile({ id: currentSession.user.id, email: currentSession.user.email });
-              }
-            } catch (error) {
-              console.error("Error fetching profile in auth state change:", error);
-            }
-          } else if (isMounted) {
-            setProfile(null);
-            setProfileAttempted(false);
-          }
-        }
-      }
-    );
-
-    // Then check for existing session
     const initializeAuth = async () => {
       try {
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        // First check for existing session
+        const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
         
-        if (error) {
-          console.error("Error getting session:", error);
-          toast({
-            title: "Authentication Error",
-            description: "Could not connect to authentication service. Please refresh the page.",
-            variant: "destructive"
-          });
+        if (sessionError) {
+          console.error("Error getting session:", sessionError);
+          if (isMounted) setIsLoading(false);
+          return;
         }
         
         if (isMounted) {
@@ -193,7 +156,47 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               setProfile({ id: currentSession.user.id, email: currentSession.user.email });
             }
           }
+          
+          setIsLoading(false);
         }
+        
+        // Then set up auth state listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, newSession) => {
+            console.log("Auth state change:", event);
+            
+            if (!isMounted) return;
+            
+            setSession(newSession);
+            setUser(newSession?.user ?? null);
+            
+            if (newSession?.user) {
+              // Mark that we've attempted to fetch the profile
+              setProfileAttempted(true);
+              
+              // Fetch user profile immediately after auth state change
+              try {
+                const profileData = await fetchProfile(newSession.user.id);
+                
+                if (profileData && isMounted) {
+                  setProfile(profileData);
+                } else if (isMounted) {
+                  // Create minimal profile if not found
+                  setProfile({ id: newSession.user.id, email: newSession.user.email });
+                }
+              } catch (error) {
+                console.error("Error fetching profile in auth state change:", error);
+              }
+            } else if (isMounted) {
+              setProfile(null);
+              setProfileAttempted(false);
+            }
+          }
+        );
+        
+        return () => {
+          subscription.unsubscribe();
+        };
       } catch (error) {
         console.error("Error initializing auth:", error);
         toast({
@@ -201,7 +204,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           description: "Failed to initialize authentication. Please refresh the page.",
           variant: "destructive"
         });
-      } finally {
         if (isMounted) {
           setIsLoading(false);
         }
@@ -212,7 +214,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     return () => {
       isMounted = false;
-      subscription.unsubscribe();
     };
   }, []);
 

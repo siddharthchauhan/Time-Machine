@@ -114,17 +114,23 @@ export const useAuth = () => {
       }
       
       // If direct query didn't work, try the context method
-      const refreshedProfile = await context.refreshProfile();
-      setIsLoading(false);
-      
-      if (refreshedProfile?.id) {
-        setIsReady(true);
-        console.log("Profile refreshed successfully via context:", refreshedProfile.id);
-        return refreshedProfile;
+      if (context.refreshProfile) {
+        const refreshedProfile = await context.refreshProfile();
+        setIsLoading(false);
+        
+        if (refreshedProfile?.id) {
+          setIsReady(true);
+          console.log("Profile refreshed successfully via context:", refreshedProfile.id);
+          return refreshedProfile;
+        } else {
+          setLoadError("Could not refresh profile data");
+          console.error("Profile refresh returned no data");
+          setRetryCount(prev => prev + 1); // Increment retry counter to trigger the useEffect
+          return null;
+        }
       } else {
-        setLoadError("Could not refresh profile data");
-        console.error("Profile refresh returned no data");
-        setRetryCount(prev => prev + 1); // Increment retry counter to trigger the useEffect
+        setIsLoading(false);
+        setLoadError("Profile refresh function not available");
         return null;
       }
     } catch (error: any) {
