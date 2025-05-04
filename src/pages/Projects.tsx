@@ -10,8 +10,7 @@ import { ProjectList } from "@/components/projects/ProjectList";
 import { ProjectDialog } from "@/components/projects/ProjectDialog";
 import { useProjects } from "@/components/projects/hooks";
 import { useAuth } from "@/hooks/use-auth";
-import { isManager } from "@/lib/permissions";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { canCreateProjects } from "@/lib/permissions";
 
 const Projects = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -31,7 +30,7 @@ const Projects = () => {
     handleArchiveProject
   } = useProjects();
 
-  const canCreateProjects = isManager(profile);
+  const userCanCreateProjects = profile ? canCreateProjects(profile) : false;
 
   const handleOpenDialog = (project: Project | null = null) => {
     setCurrentProject(project);
@@ -67,27 +66,11 @@ const Projects = () => {
               Manage your projects and track time against them
             </p>
           </div>
-          {canCreateProjects ? (
+          {userCanCreateProjects && (
             <Button onClick={() => handleOpenDialog()}>
               <Plus className="mr-2 h-4 w-4" />
               Add New Project
             </Button>
-          ) : (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div>
-                    <Button disabled>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add New Project
-                    </Button>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Only managers can create new projects</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
           )}
         </div>
 
@@ -119,7 +102,6 @@ const Projects = () => {
           onAddProject={() => handleOpenDialog()}
           onEditProject={(project) => handleOpenDialog(project)}
           onArchiveProject={handleArchiveProject}
-          canCreateProjects={canCreateProjects}
         />
       </div>
 

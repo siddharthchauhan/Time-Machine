@@ -25,10 +25,10 @@ export const isAdmin = (profile: UserProfile | null): boolean => {
 };
 
 /**
- * Checks if a user can create projects (admin or project manager)
+ * Checks if a user can create projects (all authenticated users)
  */
 export const canCreateProjects = (profile: UserProfile | null): boolean => {
-  return isManager(profile);
+  return isAuthenticated(profile); // Changed from isManager to isAuthenticated
 };
 
 /**

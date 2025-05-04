@@ -3,7 +3,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Project } from "./ProjectModel";
 import { ProjectCard } from "./ProjectCard";
 import { Plus } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ProjectListProps {
   projects: Project[];
@@ -71,28 +70,10 @@ export function ProjectList({
               )}
             </div>
           ) : (
-            canCreateProjects ? (
-              <Button onClick={onAddProject}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add New Project
-              </Button>
-            ) : (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div>
-                      <Button disabled>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add New Project
-                      </Button>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Only managers can create new projects</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )
+            <Button onClick={onAddProject}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add New Project
+            </Button>
           )}
         </CardContent>
       </Card>
