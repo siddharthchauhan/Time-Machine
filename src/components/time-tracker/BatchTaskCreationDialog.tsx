@@ -59,8 +59,34 @@ const BatchTaskCreationDialog = ({ projects, onTasksCreated }: BatchTaskCreation
       
       // For the "guest" user, we'll create mock time entries
       if (profile.id === 'guest') {
-        // Simulate a delay for better UX
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Generate the current date as YYYY-MM-DD
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Create an array to store the new entries
+        const newEntries = [];
+        
+        // Get existing time entries from localStorage or initialize empty array
+        const existingEntries = localStorage.getItem('guestTimeEntries')
+          ? JSON.parse(localStorage.getItem('guestTimeEntries')!)
+          : [];
+        
+        // Create mock time entries
+        for (let i = 0; i < count; i++) {
+          newEntries.push({
+            id: crypto.randomUUID(),
+            project_id: selectedProject,
+            date: today,
+            hours: Math.floor(Math.random() * 4) + 1, // Random between 1-4 hours
+            description: `Auto-generated time entry ${i+1}`,
+            user_id: profile.id,
+            status: 'draft',
+            approval_status: 'pending',
+            created_at: new Date().toISOString()
+          });
+        }
+        
+        // Save to localStorage
+        localStorage.setItem('guestTimeEntries', JSON.stringify([...existingEntries, ...newEntries]));
         
         // Notify about the "created" entries
         onTasksCreated(count);

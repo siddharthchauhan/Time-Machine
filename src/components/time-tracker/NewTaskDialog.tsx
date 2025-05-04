@@ -63,6 +63,27 @@ const NewTaskDialog = ({ projects, onTaskCreated }: NewTaskDialogProps) => {
         // For guest users, create a mock task with generated ID
         const mockTaskId = crypto.randomUUID();
         
+        // Create the new task object
+        const newTask = {
+          id: mockTaskId,
+          name: taskName,
+          projectId: selectedProject,
+          description: taskDescription,
+        };
+        
+        // Get existing tasks from localStorage or initialize empty object
+        const existingTasks = localStorage.getItem('guestTasks')
+          ? JSON.parse(localStorage.getItem('guestTasks')!)
+          : {};
+        
+        // Add new task to the project's task array
+        const projectTasks = existingTasks[selectedProject] || [];
+        existingTasks[selectedProject] = [...projectTasks, { id: mockTaskId, name: taskName }];
+        
+        // Save updated tasks to localStorage
+        localStorage.setItem('guestTasks', JSON.stringify(existingTasks));
+        
+        // Notify parent component
         onTaskCreated({
           id: mockTaskId,
           name: taskName,

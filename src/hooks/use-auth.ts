@@ -2,11 +2,14 @@
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/lib/auth';
+import { useState, useEffect } from 'react';
 
 /**
  * Mock auth hook that provides placeholder values without actual authentication
  */
 export const useAuth = () => {
+  const [isLoaded, setIsLoaded] = useState(false);
+
   // Mock user profile with default values
   const mockProfile: UserProfile = {
     id: 'guest',
@@ -27,12 +30,20 @@ export const useAuth = () => {
     email: 'guest@example.com',
     email_confirmed_at: '',
   } as User;
+
+  useEffect(() => {
+    // Simulate loading delay
+    setTimeout(() => {
+      setIsLoaded(true);
+    }, 500);
+  }, []);
   
   // Mock functions that previously relied on auth
   const signIn = async () => ({ data: null, error: null });
   const signUp = async () => ({ data: null, error: null });
   const signOut = async () => {};
   const refreshProfile = async () => mockProfile;
+  const forceRefreshProfile = async () => mockProfile;
   
   return {
     user: mockUser,
@@ -41,14 +52,14 @@ export const useAuth = () => {
     signUp,
     signOut,
     refreshProfile,
-    isReady: true,
-    isLoading: false,
+    isReady: isLoaded,
+    isLoading: !isLoaded,
     loadError: null,
     supabase,
     session: null,
     authFlowState: 'signIn',
     setAuthFlowState: () => {},
-    forceRefreshProfile: async () => mockProfile
+    forceRefreshProfile
   };
 };
 

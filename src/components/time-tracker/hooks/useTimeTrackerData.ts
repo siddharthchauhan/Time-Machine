@@ -48,29 +48,6 @@ export const useTimeTrackerData = () => {
     }
   }, [forceRefreshProfile, toast]);
   
-  // Demo projects for guest user
-  const guestDemoProjects = [
-    { id: "demo-project-1", name: "Demo Project" },
-    { id: "demo-project-2", name: "Sample Project" },
-    { id: "demo-project-3", name: "Test Project" }
-  ];
-  
-  // Demo tasks for guest user
-  const guestDemoTasks = {
-    "demo-project-1": [
-      { id: "demo-task-1", name: "Task 1" },
-      { id: "demo-task-2", name: "Task 2" }
-    ],
-    "demo-project-2": [
-      { id: "demo-task-3", name: "Feature Development" },
-      { id: "demo-task-4", name: "Bug Fixing" }
-    ],
-    "demo-project-3": [
-      { id: "demo-task-5", name: "Design" },
-      { id: "demo-task-6", name: "Implementation" }
-    ]
-  };
-  
   const fetchProjects = useCallback(async () => {
     setIsLoadingProjects(true);
     setDatabaseError(null);
@@ -85,11 +62,26 @@ export const useTimeTrackerData = () => {
     try {
       console.log("Fetching projects with profile ID:", profile.id);
       
-      // For the guest user, provide demo projects
+      // For the guest user, we need special handling
       if (profile.id === 'guest') {
-        console.log("Using demo projects for guest user");
-        setProjects(guestDemoProjects);
-        setTasks(guestDemoTasks);
+        // Get projects from localStorage if available
+        const storedProjects = localStorage.getItem('guestProjects');
+        if (storedProjects) {
+          const parsedProjects = JSON.parse(storedProjects);
+          console.log("Loaded guest projects from localStorage:", parsedProjects.length);
+          setProjects(parsedProjects);
+        } else {
+          // No saved projects, start with empty array
+          console.log("No guest projects in localStorage, starting with empty array");
+          setProjects([]);
+        }
+          
+        // Get tasks from localStorage if available
+        const storedTasks = localStorage.getItem('guestTasks');
+        if (storedTasks) {
+          setTasks(JSON.parse(storedTasks));
+        }
+          
         setIsLoadingProjects(false);
         return;
       }
@@ -142,8 +134,18 @@ export const useTimeTrackerData = () => {
     }
 
     try {
-      // For guest user, don't query the database
+      // For guest user, check localStorage
       if (profile?.id === 'guest') {
+        const storedTasks = localStorage.getItem('guestTasks');
+        if (storedTasks) {
+          const parsedTasks = JSON.parse(storedTasks);
+          if (parsedTasks[projectId]) {
+            setTasks(prev => ({
+              ...prev,
+              [projectId]: parsedTasks[projectId]
+            }));
+          }
+        }
         return;
       }
       
@@ -171,7 +173,16 @@ export const useTimeTrackerData = () => {
   
   const handleProjectCreated = (newProject: { id: string; name: string }) => {
     console.log("Project created:", newProject);
-    setProjects(prevProjects => [...prevProjects, newProject]);
+    
+    // Update the projects state
+    const updatedProjects = [...projects, newProject];
+    setProjects(updatedProjects);
+    
+    // For guest user, save to localStorage
+    if (profile?.id === 'guest') {
+      localStorage.setItem('guestProjects', JSON.stringify(updatedProjects));
+    }
+    
     toast({
       title: "Project created",
       description: `${newProject.name} has been successfully added`,
@@ -180,14 +191,19 @@ export const useTimeTrackerData = () => {
   
   const handleTaskCreated = (newTask: { id: string; name: string; projectId: string }) => {
     console.log("Task created:", newTask);
-    // Update the tasks state with the new task
-    setTasks(prev => {
-      const projectTasks = prev[newTask.projectId] || [];
-      return {
-        ...prev,
-        [newTask.projectId]: [...projectTasks, { id: newTask.id, name: newTask.name }]
-      };
-    });
+    
+    // Update the tasks state
+    const projectTasks = tasks[newTask.projectId] || [];
+    const updatedTasks = {
+      ...tasks,
+      [newTask.projectId]: [...projectTasks, { id: newTask.id, name: newTask.name }]
+    };
+    setTasks(updatedTasks);
+    
+    // For guest user, save to localStorage
+    if (profile?.id === 'guest') {
+      localStorage.setItem('guestTasks', JSON.stringify(updatedTasks));
+    }
     
     toast({
       title: "Task added",

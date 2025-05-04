@@ -109,6 +109,20 @@ export const useProjectForm = ({ onProjectCreated, onClose }: UseProjectFormProp
         // For the guest user, we'll create a mock project with a generated ID
         const mockProjectId = crypto.randomUUID();
         
+        // Create new project object
+        const newProject = {
+          id: mockProjectId,
+          name: formValues.name,
+        };
+        
+        // Get existing guest projects from localStorage or initialize empty array
+        const existingProjects = localStorage.getItem('guestProjects') 
+          ? JSON.parse(localStorage.getItem('guestProjects')!) 
+          : [];
+        
+        // Add new project to localStorage
+        localStorage.setItem('guestProjects', JSON.stringify([...existingProjects, newProject]));
+        
         // Notify the parent component about the new project
         onProjectCreated({
           id: mockProjectId,

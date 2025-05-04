@@ -53,7 +53,7 @@ const ProjectTaskSelector = ({
 
       // For guest user, don't fetch from database
       if (profile?.id === 'guest') {
-        // Just use whatever tasks might be in the default tasks or return empty
+        console.log('Using guest cached tasks for project', projectId);
         const guestTasks = defaultTasks?.[projectId] || [];
         setProjectTasks(guestTasks);
         return;
@@ -73,12 +73,7 @@ const ProjectTaskSelector = ({
       if (data && data.length > 0) {
         setProjectTasks(data);
       } else {
-        // If no tasks found and we have default tasks, use them
-        if (defaultTasks && defaultTasks[projectId]) {
-          setProjectTasks(defaultTasks[projectId]);
-        } else {
-          setProjectTasks([]);
-        }
+        setProjectTasks([]);
       }
     } catch (error) {
       console.error("Error in fetchTasksForProject:", error);
