@@ -33,12 +33,48 @@ const TimeEntriesList = () => {
   // Get unique projects for filter
   const uniqueProjects = Array.from(new Set(timeEntries.map(entry => entry.project)));
   
-  // Add useEffect to fetch time entries from Supabase
+  // Add useEffect to fetch time entries from Supabase or use mock data if profile is a mock user
   useEffect(() => {
     const fetchTimeEntries = async () => {
       try {
         if (!profile) return;
         
+        // Check if we're using a mock profile (without a valid UUID)
+        if (profile.id === 'guest') {
+          // Return mock time entries for demonstration
+          setTimeEntries([
+            {
+              id: '1',
+              date: new Date().toISOString().split('T')[0],
+              project: 'Demo Project',
+              task: 'UI Development',
+              hours: 3.5,
+              status: 'draft',
+              description: 'Working on responsive design'
+            },
+            {
+              id: '2',
+              date: new Date().toISOString().split('T')[0],
+              project: 'Demo Project',
+              task: 'Backend Integration',
+              hours: 2,
+              status: 'submitted',
+              description: 'Setting up API endpoints'
+            },
+            {
+              id: '3',
+              date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
+              project: 'Marketing Website',
+              task: 'Content Writing',
+              hours: 1.5,
+              status: 'approved',
+              description: 'Creating landing page copy'
+            }
+          ]);
+          return;
+        }
+        
+        // Only attempt to fetch from database if we have a valid UUID
         const { data, error } = await supabase
           .from('time_entries')
           .select(`
