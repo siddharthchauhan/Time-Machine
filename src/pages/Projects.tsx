@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -8,10 +9,14 @@ import { Project, ProjectFormValues } from "@/components/projects/ProjectModel";
 import { ProjectList } from "@/components/projects/ProjectList";
 import { ProjectDialog } from "@/components/projects/ProjectDialog";
 import { useProjects } from "@/components/projects/hooks";
+import { useAuth } from "@/hooks/use-auth";
+import { isManager } from "@/lib/permissions";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Projects = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
+  const { profile } = useAuth();
   
   const {
     projects,
@@ -25,6 +30,8 @@ const Projects = () => {
     handleUpdateProject,
     handleArchiveProject
   } = useProjects();
+
+  const canCreateProjects = isManager(profile);
 
   const handleOpenDialog = (project: Project | null = null) => {
     setCurrentProject(project);
@@ -60,10 +67,28 @@ const Projects = () => {
               Manage your projects and track time against them
             </p>
           </div>
-          <Button onClick={() => handleOpenDialog()}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add New Project
-          </Button>
+          {canCreateProjects ? (
+            <Button onClick={() => handleOpenDialog()}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add New Project
+            </Button>
+          ) : (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Button disabled>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add New Project
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Only managers can create new projects</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
@@ -94,6 +119,7 @@ const Projects = () => {
           onAddProject={() => handleOpenDialog()}
           onEditProject={(project) => handleOpenDialog(project)}
           onArchiveProject={handleArchiveProject}
+          canCreateProjects={canCreateProjects}
         />
       </div>
 

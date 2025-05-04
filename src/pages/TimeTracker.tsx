@@ -5,6 +5,7 @@ import TimeTrackerHeader from "@/components/time-tracker/TimeTrackerHeader";
 import TimeTrackerAlerts from "@/components/time-tracker/TimeTrackerAlerts";
 import TimeTrackerContent from "@/components/time-tracker/TimeTrackerContent";
 import { useTimeTrackerData } from "@/components/time-tracker/hooks/useTimeTrackerData";
+import { useToast } from "@/hooks/use-toast";
 
 const TimeTracker = () => {
   const {
@@ -21,6 +22,8 @@ const TimeTracker = () => {
     profile
   } = useTimeTrackerData();
   
+  const { toast } = useToast();
+  
   useEffect(() => {
     // Only fetch projects when profile is ready and loaded
     if (isReady && profile?.id) {
@@ -30,6 +33,14 @@ const TimeTracker = () => {
       console.log("Profile not ready yet, waiting...");
     }
   }, [isReady, profile, fetchProjects]);
+  
+  const handleBatchTasksCreated = (count: number) => {
+    toast({
+      title: "Batch Creation Successful",
+      description: `${count} time entries have been created.`,
+    });
+    // No need to refresh projects or tasks as these are just time entries
+  };
 
   return (
     <MainLayout>
@@ -38,6 +49,7 @@ const TimeTracker = () => {
           projects={projects}
           onProjectCreated={handleProjectCreated}
           onTaskCreated={handleTaskCreated}
+          onBatchTasksCreated={handleBatchTasksCreated}
         />
         
         <TimeTrackerAlerts

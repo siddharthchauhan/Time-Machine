@@ -1,18 +1,26 @@
 
 import NewTaskDialog from "./NewTaskDialog";
 import NewProjectDialog from "./NewProjectDialog";
+import BatchTaskCreationDialog from "./BatchTaskCreationDialog";
+import { useAuth } from "@/hooks/use-auth";
+import { isManager } from "@/lib/permissions";
 
 interface TimeTrackerHeaderProps {
   projects: any[];
   onProjectCreated: (project: { id: string; name: string }) => void;
   onTaskCreated: (task: { id: string; name: string; projectId: string }) => void;
+  onBatchTasksCreated?: (count: number) => void;
 }
 
 const TimeTrackerHeader = ({
   projects,
   onProjectCreated,
-  onTaskCreated
+  onTaskCreated,
+  onBatchTasksCreated = () => {}
 }: TimeTrackerHeaderProps) => {
+  const { profile } = useAuth();
+  const canCreateProjects = isManager(profile);
+
   return (
     <div className="flex justify-between items-center">
       <div>
@@ -23,7 +31,8 @@ const TimeTrackerHeader = ({
       </div>
       <div className="flex items-center space-x-3">
         <NewTaskDialog projects={projects} onTaskCreated={onTaskCreated} />
-        <NewProjectDialog onProjectCreated={onProjectCreated} />
+        <BatchTaskCreationDialog projects={projects} onTasksCreated={onBatchTasksCreated} />
+        {canCreateProjects && <NewProjectDialog onProjectCreated={onProjectCreated} />}
       </div>
     </div>
   );

@@ -1,9 +1,9 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Project } from "./ProjectModel";
 import { ProjectCard } from "./ProjectCard";
 import { Plus } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ProjectListProps {
   projects: Project[];
@@ -15,6 +15,7 @@ interface ProjectListProps {
   onAddProject: () => void;
   onEditProject: (project: Project) => void;
   onArchiveProject: (projectId: string) => void;
+  canCreateProjects?: boolean;
 }
 
 export function ProjectList({
@@ -26,7 +27,8 @@ export function ProjectList({
   onResetFilter,
   onAddProject,
   onEditProject,
-  onArchiveProject
+  onArchiveProject,
+  canCreateProjects = true
 }: ProjectListProps) {
   if (isLoading) {
     return (
@@ -69,10 +71,28 @@ export function ProjectList({
               )}
             </div>
           ) : (
-            <Button onClick={onAddProject}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add New Project
-            </Button>
+            canCreateProjects ? (
+              <Button onClick={onAddProject}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add New Project
+              </Button>
+            ) : (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <Button disabled>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add New Project
+                      </Button>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Only managers can create new projects</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )
           )}
         </CardContent>
       </Card>
