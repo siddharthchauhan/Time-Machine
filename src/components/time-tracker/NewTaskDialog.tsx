@@ -58,7 +58,31 @@ const NewTaskDialog = ({ projects, onTaskCreated }: NewTaskDialogProps) => {
         throw new Error("User profile not available");
       }
       
-      // Insert the task into the database
+      // Handle the guest user specially to avoid UUID errors
+      if (profile.id === 'guest') {
+        // For guest users, create a mock task with generated ID
+        const mockTaskId = crypto.randomUUID();
+        
+        onTaskCreated({
+          id: mockTaskId,
+          name: taskName,
+          projectId: selectedProject
+        });
+        
+        toast({
+          title: "Task created",
+          description: `${taskName} has been created successfully`,
+        });
+        
+        // Reset form
+        setTaskName("");
+        setTaskDescription("");
+        setSelectedProject("");
+        setOpen(false);
+        return;
+      }
+      
+      // For real users, insert the task into the database
       const { data, error } = await supabase
         .from('tasks')
         .insert({

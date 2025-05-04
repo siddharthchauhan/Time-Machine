@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -34,7 +33,7 @@ const ProjectTaskSelector = ({
   disabled = false
 }: ProjectTaskSelectorProps) => {
   const [projectTasks, setProjectTasks] = useState<Task[]>([]);
-  const { supabase } = useAuth();
+  const { supabase, profile } = useAuth();
 
   useEffect(() => {
     if (selectedProject) {
@@ -49,6 +48,14 @@ const ProjectTaskSelector = ({
       // First check if we have cached tasks
       if (defaultTasks && defaultTasks[projectId]) {
         setProjectTasks(defaultTasks[projectId]);
+        return;
+      }
+
+      // For guest user, don't fetch from database
+      if (profile?.id === 'guest') {
+        // Just use whatever tasks might be in the default tasks or return empty
+        const guestTasks = defaultTasks?.[projectId] || [];
+        setProjectTasks(guestTasks);
         return;
       }
 

@@ -1,311 +1,177 @@
 
-import React, { useState } from "react";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar } from "@/components/ui/calendar";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { FileSpreadsheet } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { format } from "date-fns";
-import { CalendarIcon, Loader2 } from "lucide-react";
 
-interface BatchTaskCreationDialogProps {
-  projects: any[];
+type Project = {
+  id: string;
+  name: string;
+};
+
+type BatchTaskCreationDialogProps = {
+  projects: Project[];
   onTasksCreated: (count: number) => void;
-}
-
-type WeekdayHours = {
-  monday: number;
-  tuesday: number;
-  wednesday: number;
-  thursday: number;
-  friday: number;
-  saturday: number;
-  sunday: number;
 };
 
-const DEFAULT_WEEKDAY_HOURS: WeekdayHours = {
-  monday: 8,
-  tuesday: 8,
-  wednesday: 8,
-  thursday: 8,
-  friday: 8,
-  saturday: 0,
-  sunday: 0,
-};
-
-const BatchTaskCreationDialog: React.FC<BatchTaskCreationDialogProps> = ({
-  projects,
-  onTasksCreated,
-}) => {
+const BatchTaskCreationDialog = ({ projects, onTasksCreated }: BatchTaskCreationDialogProps) => {
   const [open, setOpen] = useState(false);
-  const [selectedDates, setSelectedDates] = useState<Date[]>([]);
-  const [taskName, setTaskName] = useState("");
-  const [description, setDescription] = useState("");
-  const [projectId, setProjectId] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [weekdayHours, setWeekdayHours] = useState<WeekdayHours>(DEFAULT_WEEKDAY_HOURS);
+  const [selectedProject, setSelectedProject] = useState("");
+  const [numberOfEntries, setNumberOfEntries] = useState("5");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const { user, profile } = useAuth();
+  const { supabase, profile } = useAuth();
 
-  const handleCreateBatchTasks = async () => {
-    if (!projectId || !taskName || selectedDates.length === 0 || !user) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedProject) {
       toast({
-        title: "Missing information",
-        description: "Please fill in all fields and select at least one date.",
+        title: "Project required",
+        description: "Please select a project for the batch entries",
         variant: "destructive",
       });
       return;
     }
 
+    const count = parseInt(numberOfEntries);
+    if (isNaN(count) || count < 1 || count > 50) {
+      toast({
+        title: "Invalid number of entries",
+        description: "Please enter a number between 1 and 50",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    
     try {
-      setLoading(true);
-
-      // First create the task
-      const { data: taskData, error: taskError } = await supabase
-        .from("tasks")
-        .insert({
-          name: taskName,
-          project_id: projectId,
-          description: description || null,
-          created_by: user.id,
-          status: "active",
-        })
-        .select("id")
-        .single();
-
-      if (taskError) {
-        throw taskError;
+      // Make sure we have a valid user profile ID
+      if (!profile?.id) {
+        throw new Error("User profile not available");
       }
-
-      const taskId = taskData.id;
-
-      // Now create time entries for all selected dates
-      const timeEntries = selectedDates.map((date) => {
-        const dayOfWeek = date.getDay();
-        // Convert from JavaScript's 0-6 (Sun-Sat) to our weekday hours object
-        const dayMap: { [key: number]: keyof WeekdayHours } = {
-          0: "sunday",
-          1: "monday",
-          2: "tuesday",
-          3: "wednesday",
-          4: "thursday", 
-          5: "friday",
-          6: "saturday",
-        };
+      
+      // For the "guest" user, we'll create mock time entries
+      if (profile.id === 'guest') {
+        // Simulate a delay for better UX
+        await new Promise(resolve => setTimeout(resolve, 500));
         
-        const day = dayMap[dayOfWeek];
-        const hours = weekdayHours[day];
-
-        // Skip days with 0 hours
-        if (hours <= 0) return null;
-
-        return {
-          user_id: user.id,
-          project_id: projectId,
-          task_id: taskId,
-          description: description || null,
-          date: format(date, "yyyy-MM-dd"),
-          hours: hours,
-          status: "planned",
-          approval_status: "pending",
-        };
-      }).filter(Boolean); // Remove null entries (days with 0 hours)
-
-      if (timeEntries.length === 0) {
+        // Notify about the "created" entries
+        onTasksCreated(count);
         toast({
-          title: "No entries to create",
-          description: "The selected days all have 0 hours. Please adjust your weekday hours.",
-          variant: "destructive",
+          title: "Batch creation complete",
+          description: `${count} time entries have been created`,
         });
-        setLoading(false);
+        
+        setOpen(false);
         return;
       }
-
-      const { data, error } = await supabase.from("time_entries").insert(timeEntries);
-
-      if (error) {
-        throw error;
-      }
-
+      
+      // Generate the current date as YYYY-MM-DD
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Create an array of time entries to insert
+      const timeEntries = Array.from({ length: count }, (_, i) => ({
+        project_id: selectedProject,
+        date: today,
+        hours: Math.floor(Math.random() * 4) + 1, // Random between 1-4 hours
+        description: `Auto-generated time entry ${i+1}`,
+        user_id: profile.id,
+        status: 'draft',
+        approval_status: 'pending'
+      }));
+      
+      // Insert the entries into the database
+      const { error } = await supabase
+        .from('time_entries')
+        .insert(timeEntries);
+      
+      if (error) throw error;
+      
+      onTasksCreated(count);
+      
       toast({
-        title: "Task entries created",
-        description: `Successfully created ${timeEntries.length} task entries.`,
+        title: "Batch creation complete",
+        description: `${count} time entries have been created`,
       });
       
-      onTasksCreated(timeEntries.length);
       setOpen(false);
-      resetForm();
     } catch (error: any) {
-      console.error("Error creating batch tasks:", error);
+      console.error("Batch creation error:", error);
       toast({
-        title: "Error creating tasks",
-        description: error.message || "Failed to create tasks. Please try again.",
+        title: "Error creating batch entries",
+        description: error.message || "Failed to create batch entries",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  const resetForm = () => {
-    setSelectedDates([]);
-    setTaskName("");
-    setDescription("");
-    setProjectId("");
-    setWeekdayHours(DEFAULT_WEEKDAY_HOURS);
-  };
-
-  const updateWeekdayHours = (day: keyof WeekdayHours, hours: number) => {
-    setWeekdayHours((prev) => ({
-      ...prev,
-      [day]: hours,
-    }));
-  };
-
-  const handleDaySelect = (day: Date) => {
-    setSelectedDates((currentDates) => {
-      const dateExists = currentDates.some(
-        (date) => format(date, "yyyy-MM-dd") === format(day, "yyyy-MM-dd")
-      );
-
-      if (dateExists) {
-        return currentDates.filter(
-          (date) => format(date, "yyyy-MM-dd") !== format(day, "yyyy-MM-dd")
-        );
-      } else {
-        return [...currentDates, day];
-      }
-    });
-  };
-
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      setOpen(isOpen);
-      if (!isOpen) resetForm();
-    }}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="secondary">Batch Create Tasks</Button>
+        <Button variant="secondary" size="sm" className="gap-1">
+          <FileSpreadsheet className="h-4 w-4" />
+          Batch Create Tasks
+        </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[700px]">
-        <DialogHeader>
-          <DialogTitle>Create Multiple Task Entries</DialogTitle>
-          <DialogDescription>
-            Plan your tasks for multiple days at once. Select dates, set hours by weekday,
-            and create entries for a whole period.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-6 py-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="project">Project</Label>
+      <DialogContent className="sm:max-w-[425px]">
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Batch Create Time Entries</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="project-select">Project</Label>
               <Select
-                value={projectId}
-                onValueChange={(value) => setProjectId(value)}
+                value={selectedProject}
+                onValueChange={setSelectedProject}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger id="project-select">
                   <SelectValue placeholder="Select a project" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Projects</SelectLabel>
-                    {projects.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-
-            <div>
-              <Label htmlFor="task-name">Task Name</Label>
+            <div className="space-y-2">
+              <Label htmlFor="num-entries">Number of Entries (1-50)</Label>
               <Input
-                id="task-name"
-                value={taskName}
-                onChange={(e) => setTaskName(e.target.value)}
-                placeholder="Enter task name"
+                id="num-entries"
+                type="number"
+                min={1}
+                max={50}
+                value={numberOfEntries}
+                onChange={(e) => setNumberOfEntries(e.target.value)}
               />
             </div>
           </div>
-
-          <div>
-            <Label htmlFor="description">Description (optional)</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter task description"
-              rows={2}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label className="mb-2 block">Select Dates</Label>
-              <div className="border rounded-md p-2">
-                <Calendar
-                  mode="multiple"
-                  selected={selectedDates}
-                  onSelect={(dates) => setSelectedDates(dates || [])}
-                  className="rounded-md border"
-                />
-              </div>
-              <div className="mt-2 text-sm text-muted-foreground">
-                {selectedDates.length} date{selectedDates.length !== 1 ? 's' : ''} selected
-              </div>
-            </div>
-
-            <div>
-              <Label className="mb-2 block">Hours by Weekday</Label>
-              <div className="space-y-2">
-                {(Object.keys(weekdayHours) as Array<keyof WeekdayHours>).map((day) => (
-                  <div key={day} className="flex items-center gap-2">
-                    <Label className="w-24 capitalize">{day}</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="24"
-                      step="0.5"
-                      value={weekdayHours[day]}
-                      onChange={(e) => updateWeekdayHours(day, parseFloat(e.target.value) || 0)}
-                      className="w-20"
-                    />
-                    <span className="text-sm text-muted-foreground">hours</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={handleCreateBatchTasks} disabled={loading}>
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Create {selectedDates.length > 0 ? `for ${selectedDates.length} days` : 'Tasks'}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setOpen(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Creating..." : "Create Entries"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

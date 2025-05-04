@@ -73,7 +73,22 @@ export const useTimeEntryForm = () => {
     try {
       const entryDate = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
       
-      // Create a new time entry in the database
+      // For guest user, don't try to insert into database
+      if (profile.id === 'guest') {
+        // Simulate successful save with a slight delay for better UX
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        toast({
+          title: status === 'draft' ? "Time entry saved" : "Time entry submitted",
+          description: status === 'draft' 
+            ? "Your time entry has been saved as a draft"
+            : "Your time entry has been submitted for approval",
+        });
+        
+        return true;
+      }
+      
+      // For real users, create a new time entry in the database
       const { error } = await supabase
         .from('time_entries')
         .insert({

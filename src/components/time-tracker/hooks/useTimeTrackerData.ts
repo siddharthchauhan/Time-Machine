@@ -48,6 +48,29 @@ export const useTimeTrackerData = () => {
     }
   }, [forceRefreshProfile, toast]);
   
+  // Demo projects for guest user
+  const guestDemoProjects = [
+    { id: "demo-project-1", name: "Demo Project" },
+    { id: "demo-project-2", name: "Sample Project" },
+    { id: "demo-project-3", name: "Test Project" }
+  ];
+  
+  // Demo tasks for guest user
+  const guestDemoTasks = {
+    "demo-project-1": [
+      { id: "demo-task-1", name: "Task 1" },
+      { id: "demo-task-2", name: "Task 2" }
+    ],
+    "demo-project-2": [
+      { id: "demo-task-3", name: "Feature Development" },
+      { id: "demo-task-4", name: "Bug Fixing" }
+    ],
+    "demo-project-3": [
+      { id: "demo-task-5", name: "Design" },
+      { id: "demo-task-6", name: "Implementation" }
+    ]
+  };
+  
   const fetchProjects = useCallback(async () => {
     setIsLoadingProjects(true);
     setDatabaseError(null);
@@ -62,6 +85,16 @@ export const useTimeTrackerData = () => {
     try {
       console.log("Fetching projects with profile ID:", profile.id);
       
+      // For the guest user, provide demo projects
+      if (profile.id === 'guest') {
+        console.log("Using demo projects for guest user");
+        setProjects(guestDemoProjects);
+        setTasks(guestDemoTasks);
+        setIsLoadingProjects(false);
+        return;
+      }
+      
+      // For real users, fetch from database
       const { data, error } = await supabase
         .from('projects')
         .select('id, name')
@@ -109,6 +142,11 @@ export const useTimeTrackerData = () => {
     }
 
     try {
+      // For guest user, don't query the database
+      if (profile?.id === 'guest') {
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('tasks')
         .select('id, name')
