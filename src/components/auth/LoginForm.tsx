@@ -6,9 +6,10 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useAuth } from "./AuthProvider";
+import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/components/ui/use-toast";
 import { Lock, Mail } from "lucide-react";
+
 const formSchema = z.object({
   email: z.string().email({
     message: "Please enter a valid email address"

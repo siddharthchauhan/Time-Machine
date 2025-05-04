@@ -1,9 +1,11 @@
+
 import { useEffect } from "react";
 import { useNavigate, useLocation, Routes, Route, Navigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import LoginForm from "@/components/auth/LoginForm";
 import SignupForm from "@/components/auth/SignupForm";
-import { useAuth } from "@/components/auth/AuthProvider";
+import { useAuth } from "@/hooks/use-auth";
+
 export default function Auth() {
   const {
     user,
@@ -12,6 +14,7 @@ export default function Auth() {
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || "/";
+  
   useEffect(() => {
     // If user is logged in, redirect to home or the page they were trying to access
     if (user && !isLoading) {
@@ -27,6 +30,7 @@ export default function Auth() {
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>;
   }
+  
   return <div className="flex items-center justify-center min-h-screen bg-muted/40">
       <div className="w-full max-w-md p-4">
         <Card>
