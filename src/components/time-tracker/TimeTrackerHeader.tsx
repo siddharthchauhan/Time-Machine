@@ -3,7 +3,8 @@ import NewTaskDialog from "./NewTaskDialog";
 import NewProjectDialog from "./NewProjectDialog";
 import BatchTaskCreationDialog from "./BatchTaskCreationDialog";
 import { useAuth } from "@/hooks/use-auth";
-import { isManager } from "@/lib/permissions";
+import { isManager, canCreateTasks, canCreateProjects } from "@/lib/permissions";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TimeTrackerHeaderProps {
   projects: any[];
@@ -19,7 +20,8 @@ const TimeTrackerHeader = ({
   onBatchTasksCreated = () => {}
 }: TimeTrackerHeaderProps) => {
   const { profile } = useAuth();
-  const canCreateProjects = isManager(profile);
+  const userCanCreateProjects = canCreateProjects(profile);
+  const userCanCreateTasks = canCreateTasks(profile);
 
   return (
     <div className="flex justify-between items-center">
@@ -30,9 +32,29 @@ const TimeTrackerHeader = ({
         </p>
       </div>
       <div className="flex items-center space-x-3">
-        <NewTaskDialog projects={projects} onTaskCreated={onTaskCreated} />
-        <BatchTaskCreationDialog projects={projects} onTasksCreated={onBatchTasksCreated} />
-        {canCreateProjects && <NewProjectDialog onProjectCreated={onProjectCreated} />}
+        {userCanCreateTasks && (
+          <>
+            <NewTaskDialog projects={projects} onTaskCreated={onTaskCreated} />
+            <BatchTaskCreationDialog projects={projects} onTasksCreated={onBatchTasksCreated} />
+          </>
+        )}
+        
+        {userCanCreateProjects ? (
+          <NewProjectDialog onProjectCreated={onProjectCreated} />
+        ) : (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <div className="inline-flex items-center justify-center h-10 px-4 py-2 opacity-60 cursor-not-allowed bg-muted text-muted-foreground rounded-md">
+                  New Project
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Only managers can create new projects</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
       </div>
     </div>
   );
