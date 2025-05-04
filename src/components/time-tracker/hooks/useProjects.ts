@@ -10,7 +10,7 @@ export const useProjects = () => {
   const { toast } = useToast();
   const { profile, supabase, isReady, forceRefreshProfile } = useAuth();
 
-  const fetchProjects = useCallback(async () => {
+  const fetchProjects = useCallback(async (): Promise<void> => {
     setIsLoadingProjects(true);
     setDatabaseError(null);
     

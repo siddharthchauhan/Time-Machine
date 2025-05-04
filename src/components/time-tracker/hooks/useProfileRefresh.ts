@@ -8,7 +8,7 @@ export const useProfileRefresh = () => {
   const { isReady, profile, loadError, forceRefreshProfile } = useAuth();
   
   // Function to refresh profile and retry project loading
-  const handleProfileRefresh = useCallback(async () => {
+  const handleProfileRefresh = useCallback(async (): Promise<void> => {
     console.log("Attempting to refresh profile");
     try {
       const success = await forceRefreshProfile();
@@ -17,14 +17,12 @@ export const useProfileRefresh = () => {
           title: "Profile refreshed",
           description: "Your profile has been successfully loaded.",
         });
-        return true;
       } else {
         toast({
           title: "Profile refresh failed",
           description: "Please try signing out and signing back in.",
           variant: "destructive",
         });
-        return false;
       }
     } catch (error: any) {
       toast({
@@ -32,7 +30,6 @@ export const useProfileRefresh = () => {
         description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
-      return false;
     }
   }, [forceRefreshProfile, toast]);
   

@@ -1,10 +1,10 @@
 
-import { AlertCircle, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle, Database, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface TimeTrackerAlertsProps {
-  loadError: string | null;
+  loadError: any;
   databaseError: string | null;
   onProfileRefresh: () => Promise<void>;
   onRetryProjects: () => Promise<void>;
@@ -17,51 +17,45 @@ const TimeTrackerAlerts = ({
   onRetryProjects
 }: TimeTrackerAlertsProps) => {
   return (
-    <>
+    <div className="space-y-4">
       {loadError && (
         <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <div className="flex justify-between items-center w-full">
-            <div>
-              <AlertTitle>Profile Error</AlertTitle>
-              <AlertDescription>
-                {loadError}
-              </AlertDescription>
-            </div>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Authentication Error</AlertTitle>
+          <AlertDescription className="flex flex-col gap-2">
+            <p>There was a problem loading your user profile.</p>
             <Button 
               variant="outline" 
               size="sm" 
+              className="w-fit" 
               onClick={onProfileRefresh}
-              className="ml-2 whitespace-nowrap"
             >
-              <RefreshCw className="h-3.5 w-3.5 mr-1" /> Refresh Profile
+              <RefreshCcw className="mr-2 h-4 w-4" />
+              Refresh Profile
             </Button>
-          </div>
+          </AlertDescription>
         </Alert>
       )}
       
       {databaseError && (
         <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <div className="flex justify-between items-center w-full">
-            <div>
-              <AlertTitle>Database Error</AlertTitle>
-              <AlertDescription>
-                {databaseError}
-              </AlertDescription>
-            </div>
+          <Database className="h-4 w-4" />
+          <AlertTitle>Database Error</AlertTitle>
+          <AlertDescription className="flex flex-col gap-2">
+            <p>{databaseError}</p>
             <Button 
               variant="outline" 
               size="sm" 
+              className="w-fit" 
               onClick={onRetryProjects}
-              className="ml-2 whitespace-nowrap"
             >
-              <RefreshCw className="h-3.5 w-3.5 mr-1" /> Retry
+              <RefreshCcw className="mr-2 h-4 w-4" />
+              Retry Connection
             </Button>
-          </div>
+          </AlertDescription>
         </Alert>
       )}
-    </>
+    </div>
   );
 };
 
