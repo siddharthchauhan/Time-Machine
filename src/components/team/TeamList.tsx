@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +7,7 @@ import { Plus } from "lucide-react";
 import AddTeamMemberDialog from "./AddTeamMemberDialog";
 import { UserRole } from "./types";
 import TeamDashboard from "./TeamDashboard";
-import { useAuth } from "@/components/auth/AuthProvider";
+import { useAuth } from "@/hooks/use-auth";
 import { useTeamData } from "./useTeamData";
 import TeamTabContent from "./TeamTabContent";
 import TeamMemberCard from "./TeamMemberCard";

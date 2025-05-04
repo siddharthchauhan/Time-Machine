@@ -11,4 +11,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   return <AuthContext.Provider value={authState}>{children}</AuthContext.Provider>;
 };
 
+// Re-export the useAuth hook to maintain backward compatibility
+export { useAuth } from '@/hooks/use-auth';
 export { RequireAuth } from './RequireAuth';

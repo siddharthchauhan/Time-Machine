@@ -9,7 +9,7 @@ import { PlusCircle, Pencil, Trash2, Building } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useAuth } from "@/components/auth/AuthProvider";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Table,
   TableBody,

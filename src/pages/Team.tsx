@@ -1,11 +1,10 @@
-
 import { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import TeamList from "@/components/team/TeamList";
 import DepartmentManagement from "@/components/team/DepartmentManagement";
 import OrgStructureManagement from "@/components/team/OrgStructureManagement";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from "@/components/auth/AuthProvider";
+import { useAuth } from "@/hooks/use-auth";
 
 const Team = () => {
   const [activeTab, setActiveTab] = useState("team");
