@@ -41,18 +41,21 @@ export default function LoginForm() {
     setAuthError(null);
     
     try {
-      // With auth disabled, we just simulate a successful login
-      const result = await signIn();
+      const { error } = await signIn(values.email, values.password);
+      
+      if (error) {
+        setAuthError(error.message);
+        return;
+      }
       
       toast({
-        title: "Authentication Disabled",
-        description: "Login functionality is currently disabled. All routes are accessible."
+        title: "Welcome back!",
+        description: "You have successfully logged in.",
       });
       
-      // Navigate to home page
       navigate('/');
     } catch (error: any) {
-      setAuthError("Authentication is currently disabled.");
+      setAuthError(error.message || "An error occurred during login");
     } finally {
       setIsLoading(false);
     }

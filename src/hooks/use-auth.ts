@@ -1,65 +1,125 @@
 
-import { User } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/lib/auth';
 import { useState, useEffect } from 'react';
 
-/**
- * Mock auth hook that provides placeholder values without actual authentication
- */
 export const useAuth = () => {
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  // Mock user profile with default values
-  const mockProfile: UserProfile = {
-    id: 'guest',
-    email: 'guest@example.com',
-    full_name: 'Guest User',
-    role: 'employee'
-  };
-  
-  // Mock user with default values
-  const mockUser: User | null = {
-    id: 'guest',
-    app_metadata: {},
-    user_metadata: {
-      full_name: 'Guest User'
-    },
-    aud: 'authenticated',
-    created_at: '',
-    email: 'guest@example.com',
-    email_confirmed_at: '',
-  } as User;
+  const [isLoading, setIsLoading] = useState(true);
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [authFlowState, setAuthFlowState] = useState('signIn');
 
   useEffect(() => {
-    // Simulate loading delay
-    setTimeout(() => {
-      setIsLoaded(true);
-    }, 500);
+    let isMounted = true;
+
+    // Set up auth state listener first
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        if (!isMounted) return;
+
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        
+        // If user signed out, clear profile
+        if (!currentSession?.user) {
+          setProfile(null);
+        }
+      }
+    );
+
+    // Then check for existing session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      if (!isMounted) return;
+      
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      setIsLoading(false);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
-  
-  // Mock functions that previously relied on auth
-  const signIn = async () => ({ data: null, error: null });
-  const signUp = async () => ({ data: null, error: null });
-  const signOut = async () => {};
-  const refreshProfile = async () => mockProfile;
-  const forceRefreshProfile = async () => mockProfile;
-  
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error: any) {
+      console.error('Sign in error:', error);
+      return { data: null, error };
+    }
+  };
+
+  const signUp = async (email: string, password: string, metadata?: any) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata
+        }
+      });
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error: any) {
+      console.error('Sign up error:', error);
+      return { data: null, error };
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
+  };
+
+  const refreshProfile = async (): Promise<UserProfile | null> => {
+    if (!user) return null;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+        
+      if (error) throw error;
+      
+      if (data) {
+        setProfile(data);
+        return data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error refreshing profile:', error);
+      return null;
+    }
+  };
+
   return {
-    user: mockUser,
-    profile: mockProfile,
+    session,
+    user,
+    profile,
     signIn,
     signUp,
     signOut,
+    isLoading,
     refreshProfile,
-    isReady: isLoaded,
-    isLoading: !isLoaded,
-    loadError: null,
-    supabase,
-    session: null,
-    authFlowState: 'signIn',
-    setAuthFlowState: () => {},
-    forceRefreshProfile
+    authFlowState,
+    setAuthFlowState,
+    supabase
   };
 };
 
