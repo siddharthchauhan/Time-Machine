@@ -13,6 +13,7 @@ export const useProjectForm = ({ onProjectCreated, onClose }: UseProjectFormProp
   const [formValues, setFormValues] = useState<ProjectFormValues>({
     name: "",
     description: "",
+    clientId: undefined,
     status: "active"
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -77,6 +78,13 @@ export const useProjectForm = ({ onProjectCreated, onClose }: UseProjectFormProp
     }));
   };
 
+  const handleSelectChange = (name: string, value: string) => {
+    setFormValues((prev) => ({
+      ...prev,
+      [name]: name === "clientId" && value === "none" ? undefined : value,
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -103,6 +111,7 @@ export const useProjectForm = ({ onProjectCreated, onClose }: UseProjectFormProp
     
     try {
       console.log("Creating project with user ID:", profile.id);
+      console.log("Project data:", { ...formValues, clientId: formValues.clientId || null });
       
       // Handle the mock guest user specially to avoid UUID errors
       if (profile.id === 'guest') {
@@ -114,6 +123,7 @@ export const useProjectForm = ({ onProjectCreated, onClose }: UseProjectFormProp
           id: mockProjectId,
           name: formValues.name,
           description: formValues.description || null,
+          client_id: formValues.clientId || null,
           status: 'active',
           created_by: profile.id,
           created_at: new Date().toISOString(),
@@ -143,6 +153,7 @@ export const useProjectForm = ({ onProjectCreated, onClose }: UseProjectFormProp
         setFormValues({
           name: "",
           description: "",
+          clientId: undefined,
           status: "active"
         });
         onClose();
@@ -155,6 +166,7 @@ export const useProjectForm = ({ onProjectCreated, onClose }: UseProjectFormProp
         .insert({
           name: formValues.name,
           description: formValues.description || null,
+          client_id: formValues.clientId || null,
           status: 'active',
           created_by: profile.id,
           created_at: new Date().toISOString(),
@@ -180,6 +192,7 @@ export const useProjectForm = ({ onProjectCreated, onClose }: UseProjectFormProp
       setFormValues({
         name: "",
         description: "",
+        clientId: undefined,
         status: "active"
       });
       onClose();
@@ -201,6 +214,7 @@ export const useProjectForm = ({ onProjectCreated, onClose }: UseProjectFormProp
     isRefreshing,
     profileError,
     handleChange,
+    handleSelectChange,
     handleSubmit,
     handleRefresh
   };

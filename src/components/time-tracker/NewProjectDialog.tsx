@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import BasicProjectInfo from "@/components/projects/form/BasicProjectInfo";
+import ClientSelector from "@/components/projects/form/ClientSelector";
 import { useProjectForm } from "./hooks/useProjectForm";
 import ProfileErrorAlert from "./ProfileErrorAlert";
 
@@ -20,6 +21,7 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
     isRefreshing,
     profileError,
     handleChange,
+    handleSelectChange,
     handleSubmit,
     handleRefresh
   } = useProjectForm({ 
@@ -49,6 +51,12 @@ const NewProjectDialog = ({ onProjectCreated }: NewProjectDialogProps) => {
               description={formValues.description || ""}
               onChange={handleChange}
             />
+            
+            <ClientSelector
+              clientId={formValues.clientId}
+              onClientChange={(value) => handleSelectChange("clientId", value)}
+            />
+            
             {profileError && (
               <ProfileErrorAlert 
                 errorMessage={profileError}
