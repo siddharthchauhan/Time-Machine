@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Grid2X2, ListPlus, LayoutList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,6 +20,10 @@ const TimeTrackerContent = ({ isLoadingProjects, projects, tasks }: TimeTrackerC
   const handleEntrySubmitted = () => {
     setRefreshTimeEntries(prev => prev + 1);
   };
+  
+  useEffect(() => {
+    console.log("TimeTrackerContent rendered with projects:", projects?.length);
+  }, [projects]);
   
   return (
     <div>
@@ -48,8 +52,8 @@ const TimeTrackerContent = ({ isLoadingProjects, projects, tasks }: TimeTrackerC
             </div>
           ) : (
             <TimeEntryForm 
-              projects={projects} 
-              tasks={tasks} 
+              projects={projects || []} 
+              tasks={tasks || {}} 
               onEntrySubmitted={handleEntrySubmitted}
             />
           )}

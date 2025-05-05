@@ -18,6 +18,7 @@ const TimeTracker = () => {
     fetchProjects,
     handleProjectCreated,
     handleTaskCreated,
+    handleBatchTasksCreated,
     isReady,
     profile
   } = useTimeTrackerData();
@@ -34,14 +35,10 @@ const TimeTracker = () => {
     }
   }, [isReady, profile, fetchProjects]);
   
-  const handleBatchTasksCreated = (count: number) => {
-    toast({
-      title: "Batch Creation Successful",
-      description: `${count} time entries have been created.`,
-    });
-    // No need to refresh projects or tasks as these are just time entries
-  };
-
+  useEffect(() => {
+    console.log("TimeTracker rendered with:", { isReady, profile, projects: projects?.length });
+  }, [isReady, profile, projects]);
+  
   return (
     <MainLayout>
       <div className="space-y-6 md:space-y-8 animate-fade-in">

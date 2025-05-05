@@ -20,6 +20,8 @@ export const useAuth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         if (!isMounted) return;
+        
+        console.log("Auth state changed:", event, currentSession?.user?.id);
 
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
@@ -34,6 +36,8 @@ export const useAuth = () => {
     // Then check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       if (!isMounted) return;
+      
+      console.log("Initial session check:", currentSession?.user?.id || "No session");
       
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
@@ -103,16 +107,24 @@ export const useAuth = () => {
 
   const signOut = async () => {
     try {
+      console.log("Signing out user");
       await supabase.auth.signOut();
+      console.log("Sign out complete");
+      // The auth state listener will handle updating the state
     } catch (error) {
       console.error('Sign out error:', error);
     }
   };
 
   const refreshProfile = async (): Promise<UserProfile | null> => {
-    if (!user) return null;
+    if (!user) {
+      console.log("Cannot refresh profile - no user");
+      return null;
+    }
     
     try {
+      console.log("Refreshing profile for user:", user.id);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -122,14 +134,33 @@ export const useAuth = () => {
       if (error) throw error;
       
       if (data) {
+        console.log("Profile loaded:", data.id);
         setProfile(data);
         return data;
       }
-      return null;
+      
+      console.log("Profile not found in database, creating guest profile");
+      // If no profile found, create a minimal guest profile
+      const guestProfile: UserProfile = {
+        id: user.id,
+        email: user.email || undefined,
+        full_name: user.user_metadata?.full_name || user.email || 'User'
+      };
+      
+      setProfile(guestProfile);
+      return guestProfile;
     } catch (error) {
       console.error('Error refreshing profile:', error);
       setLoadError(error);
-      return null;
+      
+      // Create a basic profile to prevent further errors
+      const fallbackProfile: UserProfile = {
+        id: user.id,
+        email: user.email || undefined
+      };
+      
+      setProfile(fallbackProfile);
+      return fallbackProfile;
     }
   };
 
