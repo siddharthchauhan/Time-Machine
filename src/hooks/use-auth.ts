@@ -10,6 +10,8 @@ export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [authFlowState, setAuthFlowState] = useState('signIn');
+  const [isReady, setIsReady] = useState(false);
+  const [loadError, setLoadError] = useState<any>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -36,6 +38,28 @@ export const useAuth = () => {
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       setIsLoading(false);
+      
+      if (currentSession?.user) {
+        // Try to load the profile
+        refreshProfile()
+          .then(() => {
+            if (isMounted) {
+              setIsReady(true);
+              setLoadError(null);
+            }
+          })
+          .catch(error => {
+            if (isMounted) {
+              console.error('Error loading profile on init:', error);
+              setLoadError(error);
+              setIsReady(true);
+            }
+          });
+      } else {
+        if (isMounted) {
+          setIsReady(true);
+        }
+      }
     });
 
     return () => {
@@ -104,9 +128,13 @@ export const useAuth = () => {
       return null;
     } catch (error) {
       console.error('Error refreshing profile:', error);
+      setLoadError(error);
       return null;
     }
   };
+
+  // Alias for refreshProfile to maintain compatibility with existing code
+  const forceRefreshProfile = refreshProfile;
 
   return {
     session,
@@ -117,8 +145,11 @@ export const useAuth = () => {
     signOut,
     isLoading,
     refreshProfile,
+    forceRefreshProfile,
     authFlowState,
     setAuthFlowState,
+    isReady,
+    loadError,
     supabase
   };
 };
