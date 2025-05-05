@@ -6,9 +6,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface TimeEntriesTabContentProps {
   entries: TimeEntry[];
   isLoading?: boolean;
+  onDeleteEntry?: (id: string) => void;
+  onEditEntry?: (entry: TimeEntry) => void;
 }
 
-const TimeEntriesTabContent = ({ entries, isLoading = false }: TimeEntriesTabContentProps) => {
+const TimeEntriesTabContent = ({ 
+  entries, 
+  isLoading = false,
+  onDeleteEntry,
+  onEditEntry
+}: TimeEntriesTabContentProps) => {
   if (isLoading) {
     return (
       <div className="space-y-4 mt-4">
@@ -35,7 +42,12 @@ const TimeEntriesTabContent = ({ entries, isLoading = false }: TimeEntriesTabCon
     <div className="space-y-4 mt-4">
       {entries.length > 0 ? (
         entries.map((entry) => (
-          <TimeEntryCard key={entry.id} entry={entry} />
+          <TimeEntryCard 
+            key={entry.id} 
+            entry={entry} 
+            onDelete={onDeleteEntry}
+            onEdit={onEditEntry}
+          />
         ))
       ) : (
         <div className="text-center py-10 border rounded-lg bg-muted/10">

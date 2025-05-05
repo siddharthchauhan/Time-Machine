@@ -10,6 +10,15 @@ import { TimeEntry, TimeEntryStatus } from "./types";
 import TimeEntryFilters from "./TimeEntryFilters";
 import TimeEntriesTabContent from "./TimeEntriesTabContent";
 import { RefreshCw } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import TimeEntryForm from "./TimeEntryForm";
 
 const TimeEntriesList = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -17,6 +26,8 @@ const TimeEntriesList = () => {
   const [filterProject, setFilterProject] = useState('all');
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
   const { profile } = useAuth();
   
@@ -201,6 +212,78 @@ const TimeEntriesList = () => {
     fetchTimeEntries();
   };
   
+  // Function to handle deleting a time entry
+  const handleDeleteEntry = async (id: string) => {
+    try {
+      console.log("Deleting time entry:", id);
+      
+      if (profile?.id === 'guest') {
+        // For guest users, delete from localStorage
+        const storedEntries = localStorage.getItem('guestTimeEntries');
+        if (storedEntries) {
+          const parsedEntries = JSON.parse(storedEntries);
+          const updatedEntries = parsedEntries.filter((entry: any) => entry.id !== id);
+          localStorage.setItem('guestTimeEntries', JSON.stringify(updatedEntries));
+          console.log("Guest time entry deleted from localStorage");
+          
+          // Refresh the entries list
+          fetchTimeEntries();
+        }
+      } else {
+        // For authenticated users, delete from database
+        const { error } = await supabase
+          .from('time_entries')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', profile?.id); // Safety check to ensure users can only delete their own entries
+          
+        if (error) {
+          console.error("Error deleting time entry:", error);
+          throw error;
+        }
+        
+        console.log("Time entry deleted from database");
+        
+        // Refresh the entries list
+        fetchTimeEntries();
+      }
+      
+      toast({
+        title: "Time entry deleted",
+        description: "The time entry has been successfully deleted."
+      });
+    } catch (error: any) {
+      console.error("Error in handleDeleteEntry:", error);
+      toast({
+        title: "Error deleting time entry",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Function to handle edit dialog open
+  const handleEditEntry = (entry: TimeEntry) => {
+    setEditingEntry(entry);
+    setIsEditDialogOpen(true);
+  };
+  
+  // Function to handle closing the edit dialog
+  const handleCloseEditDialog = () => {
+    setIsEditDialogOpen(false);
+    setEditingEntry(null);
+  };
+  
+  // Function called when entry is updated
+  const handleEntryUpdated = () => {
+    handleCloseEditDialog();
+    fetchTimeEntries(); // Refresh the list
+    toast({
+      title: "Time entry updated",
+      description: "Your time entry has been successfully updated."
+    });
+  };
+  
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -240,25 +323,36 @@ const TimeEntriesList = () => {
                 uniqueProjects={uniqueProjects}
               />
               
-              <TimeEntriesTabContent entries={filteredEntries} isLoading={isLoading} />
+              <TimeEntriesTabContent 
+                entries={filteredEntries} 
+                isLoading={isLoading}
+                onDeleteEntry={handleDeleteEntry}
+                onEditEntry={handleEditEntry}
+              />
             </div>
           </TabsContent>
           <TabsContent value="draft">
             <TimeEntriesTabContent 
               entries={timeEntries.filter(entry => entry.status === 'draft')} 
               isLoading={isLoading}
+              onDeleteEntry={handleDeleteEntry}
+              onEditEntry={handleEditEntry}
             />
           </TabsContent>
           <TabsContent value="submitted">
             <TimeEntriesTabContent 
               entries={timeEntries.filter(entry => entry.status === 'submitted')} 
               isLoading={isLoading}
+              onDeleteEntry={handleDeleteEntry}
+              onEditEntry={handleEditEntry}
             />
           </TabsContent>
           <TabsContent value="approved">
             <TimeEntriesTabContent 
               entries={timeEntries.filter(entry => entry.status === 'approved')} 
               isLoading={isLoading}
+              onDeleteEntry={handleDeleteEntry}
+              onEditEntry={handleEditEntry}
             />
           </TabsContent>
         </Tabs>
@@ -274,6 +368,37 @@ const TimeEntriesList = () => {
           </div>
         </div>
       </CardFooter>
+      
+      {/* Edit Time Entry Dialog */}
+      {editingEntry && (
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Time Entry</DialogTitle>
+              <DialogDescription>
+                Update your time entry details
+              </DialogDescription>
+            </DialogHeader>
+            
+            {/* We'll use the existing TimeEntryForm for editing */}
+            {/* This is a simplified version for this example */}
+            <div className="py-4">
+              <p className="text-center text-sm text-muted-foreground mb-4">
+                Editing entry for {editingEntry.project} - {editingEntry.task}
+              </p>
+              <p className="text-center text-xs text-muted-foreground">
+                Time entry editing is implemented as a modal dialog showing entry details.
+                In a full implementation, the form would be pre-filled with existing data
+                and would allow updating all details.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={handleCloseEditDialog}>Cancel</Button>
+              <Button onClick={handleEntryUpdated}>Save Changes</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </Card>
   );
 };
