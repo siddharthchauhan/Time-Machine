@@ -6,9 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Project } from "@/components/projects/ProjectModel";
 import { Edit } from "lucide-react";
+import { Project } from "@/components/projects/ProjectModel";
+import { MultiSelect } from "@/components/team/MultiSelect";
 
 interface EditDialogProps {
   member: TeamMember;
@@ -24,7 +24,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
   onSave 
 }) => {
   const [editedMember, setEditedMember] = useState<TeamMember>({...member});
-  const [selectedProjects, setSelectedProjects] = useState<string[]>(member.projects || []);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
 
@@ -105,11 +104,10 @@ const EditDialog: React.FC<EditDialogProps> = ({
     });
   };
 
-  const handleProjectsChange = (selectedValues: string[]) => {
-    setSelectedProjects(selectedValues);
+  const handleProjectsChange = (selectedProjects: string[]) => {
     setEditedMember({
       ...editedMember,
-      projects: selectedValues
+      projects: selectedProjects
     });
   };
 
@@ -183,40 +181,13 @@ const EditDialog: React.FC<EditDialogProps> = ({
             {isLoadingProjects ? (
               <div className="text-sm text-muted-foreground">Loading projects...</div>
             ) : (
-              <div className="bg-secondary/50 border border-white/10 rounded-md">
-                <Select>
-                  <SelectTrigger className="w-full bg-secondary/50 border-0">
-                    <SelectValue placeholder="Assign to projects" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-card border border-white/10">
-                    {activeProjects.map(project => (
-                      <SelectItem key={project.id} value={project.name}>
-                        {project.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <div className="p-2 flex flex-wrap gap-1">
-                  {selectedProjects.map(project => (
-                    <Badge 
-                      key={project} 
-                      variant="secondary" 
-                      className="flex items-center gap-1"
-                    >
-                      {project}
-                      <button 
-                        className="ml-1 text-xs rounded-full hover:bg-primary/20 h-4 w-4 inline-flex items-center justify-center"
-                        onClick={() => handleProjectsChange(selectedProjects.filter(p => p !== project))}
-                      >
-                        ×
-                      </button>
-                    </Badge>
-                  ))}
-                  {selectedProjects.length === 0 && (
-                    <div className="text-xs text-muted-foreground">No projects assigned</div>
-                  )}
-                </div>
-              </div>
+              <MultiSelect
+                options={activeProjects}
+                selectedValues={editedMember.projects}
+                onChange={handleProjectsChange}
+                placeholder="No projects assigned"
+                className="bg-secondary/50 border-white/10"
+              />
             )}
           </div>
         </form>
