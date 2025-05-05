@@ -41,7 +41,7 @@ export const useProjectSubmit = (
       console.log("Creating project with user ID:", profile.id);
       console.log("Project data:", { ...formValues, clientId: formValues.clientId || null });
       
-      // Handle the mock guest user specially to avoid UUID errors
+      // Handle the guest user specially to avoid UUID errors
       if (profile.id === 'guest') {
         // For the guest user, we'll create a mock project with a generated ID
         const mockProjectId = crypto.randomUUID();
