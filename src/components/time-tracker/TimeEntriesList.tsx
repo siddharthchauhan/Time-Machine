@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import TimeEntryForm from "./TimeEntryForm";
+import TimeEntryEditForm from "./TimeEntryEditForm";
+import { useTimeTrackerData } from "./hooks/useTimeTrackerData";
 
 const TimeEntriesList = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,6 +30,9 @@ const TimeEntriesList = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
   const { profile } = useAuth();
+  
+  // Get projects and tasks for the edit form
+  const { projects, tasks } = useTimeTrackerData();
   
   const filteredEntries = timeEntries.filter(entry => {
     const matchesSearch = 
@@ -380,22 +383,14 @@ const TimeEntriesList = () => {
               </DialogDescription>
             </DialogHeader>
             
-            {/* We'll use the existing TimeEntryForm for editing */}
-            {/* This is a simplified version for this example */}
-            <div className="py-4">
-              <p className="text-center text-sm text-muted-foreground mb-4">
-                Editing entry for {editingEntry.project} - {editingEntry.task}
-              </p>
-              <p className="text-center text-xs text-muted-foreground">
-                Time entry editing is implemented as a modal dialog showing entry details.
-                In a full implementation, the form would be pre-filled with existing data
-                and would allow updating all details.
-              </p>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={handleCloseEditDialog}>Cancel</Button>
-              <Button onClick={handleEntryUpdated}>Save Changes</Button>
-            </DialogFooter>
+            {/* Replace placeholder with actual edit form */}
+            <TimeEntryEditForm 
+              entry={editingEntry}
+              projects={projects}
+              tasks={tasks}
+              onSuccess={handleEntryUpdated}
+              onCancel={handleCloseEditDialog}
+            />
           </DialogContent>
         </Dialog>
       )}

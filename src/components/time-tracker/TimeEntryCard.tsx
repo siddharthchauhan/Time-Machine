@@ -38,10 +38,6 @@ const TimeEntryCard = ({ entry, onDelete, onEdit }: TimeEntryCardProps) => {
   const handleDelete = () => {
     if (onDelete) {
       onDelete(entry.id);
-      toast({
-        title: "Time entry deleted",
-        description: "The time entry has been successfully deleted.",
-      });
     } else {
       toast({
         title: "Operation not supported",

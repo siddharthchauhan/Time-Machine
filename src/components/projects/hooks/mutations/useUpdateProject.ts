@@ -1,137 +1,162 @@
+
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
 import { Project, ProjectFormValues } from "../../ProjectModel";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export function useUpdateProject(
-  projects: Project[],
+  projects: Project[], 
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const { supabase, profile } = useAuth();
   
   const handleUpdateProject = async (projectId: string, values: ProjectFormValues): Promise<boolean> => {
-    setIsSubmitting(true);
+    console.log("Updating project:", projectId, "with values:", values);
     
     try {
-      // Handle guest user specially
-      if (profile?.id === 'guest') {
+      // Check if we're using a guest user
+      const { data: { user } } = await supabase.auth.getUser();
+      const isGuestUser = !user || user.id === 'guest';
+      
+      if (isGuestUser) {
+        // For guest users, update in localStorage
+        console.log("Guest user - updating project in localStorage");
+        
         // Get existing projects from localStorage
-        const existingProjects = localStorage.getItem('guestProjects') 
-          ? JSON.parse(localStorage.getItem('guestProjects')!) 
-          : [];
+        const existingProjects = localStorage.getItem('guestProjects');
         
-        // Find and update the project
-        const updatedProjects = existingProjects.map((project: Project) => {
-          if (project.id === projectId) {
-            return {
-              ...project,
-              name: values.name,
-              description: values.description || null,
-              client_id: values.clientId || null,
-              client_name: project.client_name || null, // Preserve existing client_name
-              start_date: values.startDate || null,
-              end_date: values.endDate || null,
-              status: values.status || 'active',
-              budget_hours: values.budgetHours || null,
-              budget_amount: values.budgetAmount || null,
-              updated_at: new Date().toISOString()
-            };
-          }
-          return project;
-        });
-        
-        // Save back to localStorage
-        localStorage.setItem('guestProjects', JSON.stringify(updatedProjects));
-        
-        // Update local state
-        setProjects((prev: Project[]) => 
-          prev.map(project => project.id === projectId ? {
-            ...project,
-            name: values.name,
-            description: values.description || null,
-            client_id: values.clientId || null,
-            // client_name remains unchanged
-            start_date: values.startDate || null,
-            end_date: values.endDate || null,
-            status: values.status || 'active',
-            budget_hours: values.budgetHours || null,
-            budget_amount: values.budgetAmount || null,
-            updated_at: new Date().toISOString()
-          } : project)
-        );
+        if (existingProjects) {
+          const parsedProjects = JSON.parse(existingProjects);
+          
+          // Find and update the project
+          const updatedProjects = parsedProjects.map((project: any) => {
+            if (project.id === projectId) {
+              return {
+                ...project,
+                name: values.name,
+                description: values.description,
+                status: values.status,
+                client_id: values.client_id,
+                start_date: values.start_date,
+                end_date: values.end_date,
+                budget_amount: parseFloat(values.budget_amount || '0'),
+                budget_hours: parseFloat(values.budget_hours || '0'),
+                updated_at: new Date().toISOString()
+              };
+            }
+            return project;
+          });
+          
+          // Save to localStorage
+          localStorage.setItem('guestProjects', JSON.stringify(updatedProjects));
+          
+          // Update the projects state
+          setProjects(prev => 
+            prev.map(project => {
+              if (project.id === projectId) {
+                const clientName = project.client_name || "Guest Client";
+                
+                return {
+                  id: project.id,
+                  name: values.name,
+                  status: values.status,
+                  client_id: values.client_id,
+                  client_name: clientName,
+                  start_date: values.start_date,
+                  end_date: values.end_date
+                };
+              }
+              return project;
+            })
+          );
+          
+          toast({
+            title: "Project updated",
+            description: "Your project has been updated successfully"
+          });
+          
+          return true;
+        }
         
         toast({
-          title: "Project updated",
-          description: `${values.name} has been updated successfully`
+          title: "Error updating project",
+          description: "No projects found in localStorage",
+          variant: "destructive"
         });
         
-        return true;
+        return false;
       }
       
-      // For real users, update the project in the database
-      const { data, error } = await supabase
-        .from("projects")
+      // For authenticated users, update in the database
+      const { error } = await supabase
+        .from('projects')
         .update({
           name: values.name,
           description: values.description,
-          client_id: values.clientId,
-          start_date: values.startDate,
-          end_date: values.endDate,
           status: values.status,
-          budget_hours: values.budgetHours,
-          budget_amount: values.budgetAmount,
+          client_id: values.client_id,
+          start_date: values.start_date,
+          end_date: values.end_date,
+          budget_amount: values.budget_amount ? parseFloat(values.budget_amount) : null,
+          budget_hours: values.budget_hours ? parseFloat(values.budget_hours) : null,
           updated_at: new Date().toISOString()
         })
-        .eq("id", projectId)
-        .select()
-        .single();
+        .eq('id', projectId);
       
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       
-      // Convert to Project type to ensure compatibility
-      const updatedProject: Project = {
-        id: data.id,
-        name: data.name,
-        description: data.description,
-        client_id: data.client_id,
-        client_name: data.client_name || null,
-        start_date: data.start_date,
-        end_date: data.end_date,
-        budget_hours: data.budget_hours,
-        budget_amount: data.budget_amount,
-        status: data.status as "active" | "completed" | "onHold" | "archived",
-        created_at: data.created_at,
-        updated_at: data.updated_at
-      };
+      // Get the client name if a client was selected
+      let clientName = "";
+      if (values.client_id) {
+        const { data: clientData } = await supabase
+          .from('clients')
+          .select('name')
+          .eq('id', values.client_id)
+          .single();
+          
+        if (clientData) {
+          clientName = clientData.name;
+        }
+      }
       
-      // Update local state
-      setProjects((prev: Project[]) => 
-        prev.map(project => project.id === projectId ? updatedProject : project)
+      // Update the projects state
+      setProjects(prev => 
+        prev.map(project => {
+          if (project.id === projectId) {
+            return {
+              id: project.id,
+              name: values.name,
+              status: values.status,
+              client_id: values.client_id,
+              client_name: clientName,
+              start_date: values.start_date,
+              end_date: values.end_date
+            };
+          }
+          return project;
+        })
       );
       
       toast({
         title: "Project updated",
-        description: `${values.name} has been updated successfully`
+        description: "Your project has been updated successfully"
       });
       
       return true;
     } catch (error: any) {
       console.error("Error updating project:", error);
+      
       toast({
         title: "Error updating project",
-        description: error.message || "An unexpected error occurred",
-        variant: "destructive",
+        description: error.message,
+        variant: "destructive"
       });
+      
       return false;
-    } finally {
-      setIsSubmitting(false);
     }
   };
-
-  return {
-    isSubmitting,
-    handleUpdateProject
-  };
+  
+  return { handleUpdateProject };
 }

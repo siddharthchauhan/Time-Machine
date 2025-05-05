@@ -1,130 +1,144 @@
 
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
 import { Project, ProjectFormValues } from "../../ProjectModel";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export function useCreateProject(
-  projects: Project[],
+  projects: Project[], 
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const { supabase, profile } = useAuth();
-
+  
   const handleCreateProject = async (values: ProjectFormValues): Promise<boolean> => {
-    if (!profile?.id) {
-      console.error("No user profile found");
-      toast({
-        title: "Error",
-        description: "User profile not available. Please try again after refresh.",
-        variant: "destructive",
-      });
-      return false;
-    }
-    
-    setIsSubmitting(true);
+    console.log("Creating project with values:", values);
     
     try {
-      // Handle guest user specially to avoid UUID errors
-      if (profile.id === 'guest') {
-        // For the guest user, we'll create a mock project with a generated ID
-        const mockProjectId = crypto.randomUUID();
+      // Check if we're using a guest user
+      const { data: { user } } = await supabase.auth.getUser();
+      const isGuestUser = !user || user.id === 'guest';
+      
+      if (isGuestUser) {
+        // For guest users, store in localStorage
+        console.log("Guest user - creating project in localStorage");
         
-        // Create new project object
-        const newProject: Project = {
-          id: mockProjectId,
+        // Create a new project with a unique ID
+        const newProject = {
+          id: crypto.randomUUID(),
           name: values.name,
-          description: values.description || null,
-          client_id: values.clientId || null,
-          client_name: null, // Explicitly set client_name as null for guest users
-          start_date: values.startDate || null,
-          end_date: values.endDate || null,
-          status: values.status || 'active',
-          budget_hours: values.budgetHours || null,
-          budget_amount: values.budgetAmount || null,
+          description: values.description,
+          status: values.status,
+          client_id: values.client_id,
+          start_date: values.start_date,
+          end_date: values.end_date,
+          budget_amount: parseFloat(values.budget_amount || '0'),
+          budget_hours: parseFloat(values.budget_hours || '0'),
+          created_by: 'guest',
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         };
         
-        // Get existing guest projects from localStorage or initialize empty array
+        // Get existing projects from localStorage or initialize empty array
         const existingProjects = localStorage.getItem('guestProjects') 
           ? JSON.parse(localStorage.getItem('guestProjects')!) 
           : [];
         
-        // Add new project to localStorage
+        // Add new project and save to localStorage
         localStorage.setItem('guestProjects', JSON.stringify([...existingProjects, newProject]));
         
-        // Update local state
-        setProjects((prev: Project[]) => [...prev, newProject]);
+        // Update the projects state
+        // We need to create a Project object from the form values
+        const newProjectForState: Project = {
+          id: newProject.id,
+          name: values.name,
+          status: values.status,
+          client_id: values.client_id,
+          client_name: "Guest Client", // Default client name for guest user
+          start_date: values.start_date,
+          end_date: values.end_date
+        };
+        
+        setProjects(prev => [...prev, newProjectForState]);
         
         toast({
           title: "Project created",
-          description: `${values.name} has been created successfully`
+          description: "Your project has been created successfully"
         });
         
         return true;
       }
       
-      // For real users, insert the project into the database
+      // For authenticated users, create a project in the database
       const { data, error } = await supabase
-        .from("projects")
+        .from('projects')
         .insert({
           name: values.name,
           description: values.description,
-          client_id: values.clientId,
-          start_date: values.startDate,
-          end_date: values.endDate,
           status: values.status,
-          budget_hours: values.budgetHours,
-          budget_amount: values.budgetAmount,
-          created_by: profile.id
+          client_id: values.client_id,
+          start_date: values.start_date,
+          end_date: values.end_date,
+          budget_amount: values.budget_amount ? parseFloat(values.budget_amount) : null,
+          budget_hours: values.budget_hours ? parseFloat(values.budget_hours) : null,
+          created_by: user.id
         })
-        .select()
-        .single();
+        .select();
       
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       
-      // Convert to Project type to ensure compatibility
-      const newProject: Project = {
-        id: data.id,
-        name: data.name,
-        description: data.description,
-        client_id: data.client_id,
-        client_name: data.client_name || null,
-        start_date: data.start_date,
-        end_date: data.end_date,
-        budget_hours: data.budget_hours,
-        budget_amount: data.budget_amount,
-        status: data.status as "active" | "completed" | "onHold" | "archived",
-        created_at: data.created_at,
-        updated_at: data.updated_at
-      };
+      console.log("Project created in Supabase:", data);
       
-      // Update local state
-      setProjects((prev: Project[]) => [...prev, newProject]);
+      if (data && data.length > 0) {
+        // Get the client name if a client was selected
+        let clientName = "";
+        if (values.client_id) {
+          const { data: clientData } = await supabase
+            .from('clients')
+            .select('name')
+            .eq('id', values.client_id)
+            .single();
+            
+          if (clientData) {
+            clientName = clientData.name;
+          }
+        }
+        
+        // Update the projects state with the new project
+        const newProject: Project = {
+          id: data[0].id,
+          name: values.name,
+          status: values.status,
+          client_id: values.client_id,
+          client_name: clientName,
+          start_date: values.start_date,
+          end_date: values.end_date
+        };
+        
+        setProjects(prev => [...prev, newProject]);
+        
+        toast({
+          title: "Project created",
+          description: "Your project has been created successfully"
+        });
+        
+        return true;
+      }
       
-      toast({
-        title: "Project created",
-        description: `${values.name} has been created successfully`
-      });
-      
-      return true;
+      return false;
     } catch (error: any) {
       console.error("Error creating project:", error);
+      
       toast({
         title: "Error creating project",
-        description: error.message || "An unexpected error occurred",
-        variant: "destructive",
+        description: error.message,
+        variant: "destructive"
       });
+      
       return false;
-    } finally {
-      setIsSubmitting(false);
     }
   };
-
-  return {
-    isSubmitting,
-    handleCreateProject
-  };
+  
+  return { handleCreateProject };
 }

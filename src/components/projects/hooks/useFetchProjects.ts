@@ -1,58 +1,52 @@
 
-import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
+import { useState, useEffect, useCallback } from "react";
 import { Project } from "../ProjectModel";
+import { supabase } from "@/integrations/supabase/client";
 
 export function useFetchProjects() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [dbConnectionError, setDbConnectionError] = useState<string | null>(null);
-  const { toast } = useToast();
-  const { supabase, profile, isReady } = useAuth();
-
-  const fetchProjects = async () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  
+  const fetchProjects = useCallback(async () => {
     setIsLoading(true);
-    setDbConnectionError(null);
-
-    if (!profile?.id) {
-      console.log("No profile ID available, cannot fetch projects");
-      setIsLoading(false);
-      setDbConnectionError("User profile not loaded. Please refresh your profile.");
-      return;
-    }
-
+    setError(null);
+    
     try {
-      console.log("Fetching projects with profile ID:", profile.id);
+      // Check if we're using a guest user
+      const { data: { user } } = await supabase.auth.getUser();
+      const isGuestUser = !user || user.id === 'guest';
       
-      // For guest user, use localStorage
-      if (profile.id === 'guest') {
-        // Get projects from localStorage if available
+      if (isGuestUser) {
+        console.log("Guest user - fetching projects from localStorage");
+        
+        // For guest users, get data from localStorage
         const storedProjects = localStorage.getItem('guestProjects');
+        
         if (storedProjects) {
-          const parsedProjects = JSON.parse(storedProjects);
-          console.log("Loaded guest projects from localStorage:", parsedProjects.length);
-          
-          // Convert localStorage data to Project type with proper casting
-          const typedProjects: Project[] = parsedProjects.map((project: any) => ({
-            id: project.id,
-            name: project.name,
-            description: project.description || null,
-            client_id: project.client_id || null,
-            client_name: project.client_name || null,
-            start_date: project.start_date || null,
-            end_date: project.end_date || null,
-            budget_hours: project.budget_hours || null,
-            budget_amount: project.budget_amount || null,
-            status: (project.status as "active" | "completed" | "onHold" | "archived") || "active",
-            created_at: project.created_at,
-            updated_at: project.updated_at
-          }));
-          
-          setProjects(typedProjects);
+          try {
+            const parsedProjects = JSON.parse(storedProjects);
+            console.log("Loaded guest projects from localStorage:", parsedProjects.length);
+            
+            // Convert to Project array
+            const projectList: Project[] = parsedProjects.map((project: any) => ({
+              id: project.id,
+              name: project.name,
+              status: project.status,
+              client_id: project.client_id,
+              client_name: "Guest Client", // Default client name for guest projects
+              start_date: project.start_date,
+              end_date: project.end_date
+            }));
+            
+            setProjects(projectList);
+          } catch (parseErr) {
+            console.error("Error parsing projects from localStorage:", parseErr);
+            setError(new Error("Failed to parse projects from localStorage"));
+            setProjects([]);
+          }
         } else {
-          // No saved projects, start with empty array
-          console.log("No guest projects in localStorage, starting with empty array");
+          console.log("No guest projects found in localStorage, initializing with empty array");
           setProjects([]);
         }
         
@@ -60,67 +54,56 @@ export function useFetchProjects() {
         return;
       }
       
-      // For real users, fetch from database
-      const { data, error } = await supabase
+      // For authenticated users, fetch from Supabase
+      console.log("Authenticated user - fetching projects from Supabase");
+      
+      // Fetch projects and include client name from the client table
+      const { data, error: fetchError } = await supabase
         .from('projects')
-        .select('*')
-        .order('name');
-        
-      if (error) throw error;
+        .select(`
+          *,
+          clients (
+            name
+          )
+        `)
+        .order('updated_at', { ascending: false });
       
-      console.log("Fetched projects:", data?.length);
+      if (fetchError) {
+        throw fetchError;
+      }
       
-      // Convert database status string to the expected Project status type
-      const typedProjects: Project[] = (data || []).map(project => ({
+      console.log("Fetched projects from Supabase:", data?.length || 0);
+      
+      // Convert to Project array
+      const projectList: Project[] = (data || []).map(project => ({
         id: project.id,
         name: project.name,
-        description: project.description,
+        status: project.status,
         client_id: project.client_id,
-        client_name: project.client_name,
+        client_name: project.clients?.name || null,
         start_date: project.start_date,
-        end_date: project.end_date,
-        budget_hours: project.budget_hours,
-        budget_amount: project.budget_amount,
-        status: (project.status as "active" | "completed" | "onHold" | "archived"),
-        created_at: project.created_at,
-        updated_at: project.updated_at
+        end_date: project.end_date
       }));
       
-      setProjects(typedProjects);
-      
-    } catch (error: any) {
-      console.error("Error fetching projects:", error);
-      setDbConnectionError(error.message || "Failed to load projects from database");
-      
-      toast({
-        title: "Error fetching projects",
-        description: error.message || "Failed to load projects",
-        variant: "destructive",
-      });
+      setProjects(projectList);
+    } catch (err: any) {
+      console.error("Error fetching projects:", err);
+      setError(err);
+      setProjects([]);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Run initial fetch when the component mounts or profile changes
+  }, []);
+  
   useEffect(() => {
-    if (isReady && profile?.id) {
-      console.log("Profile is ready, fetching projects");
-      fetchProjects();
-    } else {
-      console.log("Profile not ready yet:", isReady ? "ready but no profile" : "not ready");
-    }
-  }, [isReady, profile?.id]);
-
-  const retryConnection = () => {
     fetchProjects();
-  };
-
+  }, [fetchProjects]);
+  
   return {
     projects,
     setProjects,
     isLoading,
-    dbConnectionError,
-    retryConnection
+    error,
+    fetchProjects
   };
 }

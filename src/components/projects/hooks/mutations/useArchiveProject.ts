@@ -1,115 +1,118 @@
 
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
 import { Project } from "../../ProjectModel";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export function useArchiveProject(
-  projects: Project[],
+  projects: Project[], 
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>
 ) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const { supabase, profile } = useAuth();
   
   const handleArchiveProject = async (projectId: string): Promise<boolean> => {
-    setIsSubmitting(true);
+    console.log("Archiving project:", projectId);
     
     try {
-      // Handle guest user specially
-      if (profile?.id === 'guest') {
+      // Check if we're using a guest user
+      const { data: { user } } = await supabase.auth.getUser();
+      const isGuestUser = !user || user.id === 'guest';
+      
+      if (isGuestUser) {
+        // For guest users, handle archiving in localStorage
+        console.log("Guest user - archiving project in localStorage");
+        
         // Get existing projects from localStorage
-        const existingProjects = localStorage.getItem('guestProjects') 
-          ? JSON.parse(localStorage.getItem('guestProjects')!) 
-          : [];
+        const existingProjects = localStorage.getItem('guestProjects');
         
-        // Find and update the project status to archived
-        const updatedProjects = existingProjects.map((project: Project) => {
-          if (project.id === projectId) {
-            return {
-              ...project,
-              status: "archived" as "active" | "completed" | "onHold" | "archived",
-              updated_at: new Date().toISOString()
-            };
-          }
-          return project;
-        });
-        
-        // Save back to localStorage
-        localStorage.setItem('guestProjects', JSON.stringify(updatedProjects));
-        
-        // Update local state
-        setProjects((prev: Project[]) => 
-          prev.map(project => project.id === projectId ? {
-            ...project,
-            status: "archived",
-            updated_at: new Date().toISOString()
-          } : project)
-        );
+        if (existingProjects) {
+          const parsedProjects = JSON.parse(existingProjects);
+          
+          // Find the project to archive and update its status
+          const updatedProjects = parsedProjects.map((project: any) => {
+            if (project.id === projectId) {
+              return { ...project, status: 'archived' };
+            }
+            return project;
+          });
+          
+          // Save updated projects to localStorage
+          localStorage.setItem('guestProjects', JSON.stringify(updatedProjects));
+          
+          // Update the projects state by finding the item and updating it
+          setProjects(prev => 
+            prev.map(project => {
+              if (project.id === projectId) {
+                const { id, name, status, client_id, client_name, start_date, end_date } = project;
+                return {
+                  id,
+                  name,
+                  status: 'archived',
+                  client_id,
+                  client_name,
+                  start_date,
+                  end_date
+                };
+              }
+              return project;
+            })
+          );
+          
+          toast({
+            title: "Project archived",
+            description: "The project has been archived successfully"
+          });
+          
+          return true;
+        }
         
         toast({
-          title: "Project archived",
-          description: `Project has been archived successfully`
+          title: "Error archiving project",
+          description: "No projects found in localStorage",
+          variant: "destructive"
         });
         
-        return true;
+        return false;
       }
       
-      // For real users, update project status to archived in database
-      const { data, error } = await supabase
-        .from("projects")
-        .update({
-          status: "archived",
-          updated_at: new Date().toISOString()
+      // For authenticated users, use Supabase to archive the project
+      const { error } = await supabase
+        .from('projects')
+        .update({ status: 'archived' })
+        .eq('id', projectId);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Update the projects state
+      setProjects(prev => 
+        prev.map(project => {
+          if (project.id === projectId) {
+            return { ...project, status: 'archived' };
+          }
+          return project;
         })
-        .eq("id", projectId)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      // Convert to Project type to ensure compatibility
-      const archivedProject: Project = {
-        id: data.id,
-        name: data.name,
-        description: data.description,
-        client_id: data.client_id,
-        client_name: data.client_name || null,
-        start_date: data.start_date,
-        end_date: data.end_date,
-        budget_hours: data.budget_hours,
-        budget_amount: data.budget_amount,
-        status: data.status as "active" | "completed" | "onHold" | "archived",
-        created_at: data.created_at,
-        updated_at: data.updated_at
-      };
-      
-      // Update local state
-      setProjects((prev: Project[]) => 
-        prev.map(project => project.id === projectId ? archivedProject : project)
       );
       
       toast({
         title: "Project archived",
-        description: `Project has been archived successfully`
+        description: "The project has been archived successfully"
       });
       
       return true;
     } catch (error: any) {
       console.error("Error archiving project:", error);
+      
       toast({
         title: "Error archiving project",
-        description: error.message || "An unexpected error occurred",
-        variant: "destructive",
+        description: error.message,
+        variant: "destructive"
       });
+      
       return false;
-    } finally {
-      setIsSubmitting(false);
     }
   };
-
-  return {
-    isSubmitting,
-    handleArchiveProject
-  };
+  
+  return { handleArchiveProject };
 }
