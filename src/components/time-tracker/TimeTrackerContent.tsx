@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import TimeEntryForm from "./TimeEntryForm";
 import TimeEntriesList from "./TimeEntriesList";
+import { useAuth } from "@/hooks/use-auth";
 
 interface TimeTrackerContentProps {
   isLoadingProjects: boolean;
@@ -15,6 +16,7 @@ interface TimeTrackerContentProps {
 
 const TimeTrackerContent = ({ isLoadingProjects, projects, tasks }: TimeTrackerContentProps) => {
   const [refreshTimeEntries, setRefreshTimeEntries] = useState(0);
+  const { profile, isReady } = useAuth();
   
   // Force a refresh of the time entries list
   const handleEntrySubmitted = () => {
@@ -22,8 +24,13 @@ const TimeTrackerContent = ({ isLoadingProjects, projects, tasks }: TimeTrackerC
   };
   
   useEffect(() => {
-    console.log("TimeTrackerContent rendered with projects:", projects?.length);
-  }, [projects]);
+    console.log("TimeTrackerContent rendered with:", {
+      projects: projects?.length || 0,
+      profile: profile?.id || "none",
+      isLoading: isLoadingProjects,
+      isReady
+    });
+  }, [projects, profile, isLoadingProjects, isReady]);
   
   return (
     <div>

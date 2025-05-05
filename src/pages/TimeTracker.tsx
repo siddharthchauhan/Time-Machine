@@ -26,24 +26,27 @@ const TimeTracker = () => {
   const { toast } = useToast();
   
   useEffect(() => {
-    // Only fetch projects when profile is ready and loaded
-    if (isReady && profile?.id) {
+    if (isReady) {
       console.log("Profile is ready, fetching projects");
       fetchProjects();
     } else {
       console.log("Profile not ready yet, waiting...");
     }
-  }, [isReady, profile, fetchProjects]);
+  }, [isReady, fetchProjects]);
   
   useEffect(() => {
-    console.log("TimeTracker rendered with:", { isReady, profile, projects: projects?.length });
+    console.log("TimeTracker rendered with:", { 
+      isReady, 
+      profileId: profile?.id || "none",
+      projects: projects?.length || 0
+    });
   }, [isReady, profile, projects]);
   
   return (
     <MainLayout>
       <div className="space-y-6 md:space-y-8 animate-fade-in">
         <TimeTrackerHeader 
-          projects={projects}
+          projects={projects || []}
           onProjectCreated={handleProjectCreated}
           onTaskCreated={handleTaskCreated}
           onBatchTasksCreated={handleBatchTasksCreated}
@@ -58,8 +61,8 @@ const TimeTracker = () => {
         
         <TimeTrackerContent
           isLoadingProjects={isLoadingProjects}
-          projects={projects}
-          tasks={tasks}
+          projects={projects || []}
+          tasks={tasks || {}}
         />
       </div>
     </MainLayout>

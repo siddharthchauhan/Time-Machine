@@ -15,10 +15,11 @@ export const useAuth = () => {
 
   useEffect(() => {
     let isMounted = true;
+    let profileLoaded = false;
 
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
+      async (event, currentSession) => {
         if (!isMounted) return;
         
         console.log("Auth state changed:", event, currentSession?.user?.id);
@@ -29,12 +30,32 @@ export const useAuth = () => {
         // If user signed out, clear profile
         if (!currentSession?.user) {
           setProfile(null);
+          setIsReady(true);
+          return;
+        }
+        
+        // When user signs in, immediately try to load profile
+        if (event === 'SIGNED_IN' && currentSession?.user && !profileLoaded) {
+          try {
+            profileLoaded = true;
+            const userProfile = await refreshProfile();
+            if (isMounted) {
+              setIsReady(true);
+              setLoadError(null);
+            }
+          } catch (error) {
+            console.error("Error loading profile on auth state change:", error);
+            if (isMounted) {
+              setLoadError(error);
+              setIsReady(true);
+            }
+          }
         }
       }
     );
 
     // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+    supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
       if (!isMounted) return;
       
       console.log("Initial session check:", currentSession?.user?.id || "No session");
@@ -43,22 +64,22 @@ export const useAuth = () => {
       setUser(currentSession?.user ?? null);
       setIsLoading(false);
       
-      if (currentSession?.user) {
+      if (currentSession?.user && !profileLoaded) {
         // Try to load the profile
-        refreshProfile()
-          .then(() => {
-            if (isMounted) {
-              setIsReady(true);
-              setLoadError(null);
-            }
-          })
-          .catch(error => {
-            if (isMounted) {
-              console.error('Error loading profile on init:', error);
-              setLoadError(error);
-              setIsReady(true);
-            }
-          });
+        try {
+          profileLoaded = true;
+          const userProfile = await refreshProfile();
+          if (isMounted) {
+            setIsReady(true);
+            setLoadError(null);
+          }
+        } catch (error) {
+          console.error('Error loading profile on init:', error);
+          if (isMounted) {
+            setLoadError(error);
+            setIsReady(true);
+          }
+        }
       } else {
         if (isMounted) {
           setIsReady(true);
@@ -156,7 +177,8 @@ export const useAuth = () => {
       // Create a basic profile to prevent further errors
       const fallbackProfile: UserProfile = {
         id: user.id,
-        email: user.email || undefined
+        email: user.email || undefined,
+        full_name: user.user_metadata?.full_name || user.email || 'User'
       };
       
       setProfile(fallbackProfile);

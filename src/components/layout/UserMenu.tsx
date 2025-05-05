@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Settings, User as UserIcon, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,10 @@ interface UserMenuProps {
 const UserMenu = ({ sidebarCollapsed }: UserMenuProps) => {
   const { user, profile, signOut } = useAuth();
   
+  useEffect(() => {
+    console.log("UserMenu rendered with:", { user: !!user, profile: profile?.full_name || "none" });
+  }, [user, profile]);
+  
   // Get initials for avatar
   const getInitials = () => {
     if (!profile) return 'GU';
@@ -43,14 +47,14 @@ const UserMenu = ({ sidebarCollapsed }: UserMenuProps) => {
   
   // Get display name
   const getDisplayName = () => {
-    if (!profile) return 'Guest User';
-    return profile.full_name || profile.email || 'User';
+    if (!user) return 'Guest User';
+    return profile?.full_name || profile?.email || user.email || 'User';
   };
   
   // Get role to display
   const getRole = () => {
-    if (!profile) return 'guest';
-    return profile.role || 'employee';
+    if (!user) return 'guest';
+    return profile?.role || 'employee';
   };
   
   const handleSignOut = async () => {

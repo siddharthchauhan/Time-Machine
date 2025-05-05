@@ -11,8 +11,8 @@ export const useProfileRefresh = () => {
   const handleProfileRefresh = useCallback(async (): Promise<void> => {
     console.log("Attempting to refresh profile");
     try {
-      const success = await forceRefreshProfile();
-      if (success) {
+      const refreshedProfile = await forceRefreshProfile();
+      if (refreshedProfile?.id) {
         toast({
           title: "Profile refreshed",
           description: "Your profile has been successfully loaded.",
@@ -35,7 +35,7 @@ export const useProfileRefresh = () => {
   
   // Run profile refresh when component mounts if no profile is available
   useEffect(() => {
-    if (!isReady && !profile?.id) {
+    if (!isReady || !profile?.id) {
       console.log("Profile not ready on mount, trying to refresh");
       forceRefreshProfile().catch(error => {
         console.error("Initial profile refresh failed:", error);
