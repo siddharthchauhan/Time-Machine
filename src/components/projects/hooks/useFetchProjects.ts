@@ -30,9 +30,26 @@ export function useFetchProjects() {
         // Get projects from localStorage if available
         const storedProjects = localStorage.getItem('guestProjects');
         if (storedProjects) {
-          const parsedProjects: Project[] = JSON.parse(storedProjects);
+          const parsedProjects = JSON.parse(storedProjects);
           console.log("Loaded guest projects from localStorage:", parsedProjects.length);
-          setProjects(parsedProjects);
+          
+          // Convert localStorage data to Project type with proper casting
+          const typedProjects: Project[] = parsedProjects.map((project: any) => ({
+            id: project.id,
+            name: project.name,
+            description: project.description || null,
+            client_id: project.client_id || null,
+            client_name: project.client_name || null,
+            start_date: project.start_date || null,
+            end_date: project.end_date || null,
+            budget_hours: project.budget_hours || null,
+            budget_amount: project.budget_amount || null,
+            status: (project.status as "active" | "completed" | "onHold" | "archived") || "active",
+            created_at: project.created_at,
+            updated_at: project.updated_at
+          }));
+          
+          setProjects(typedProjects);
         } else {
           // No saved projects, start with empty array
           console.log("No guest projects in localStorage, starting with empty array");

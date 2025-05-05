@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -37,6 +36,7 @@ export function useProjectMutations(
           name: values.name,
           description: values.description || null,
           client_id: values.clientId || null,
+          client_name: null, // Explicitly set client_name as null for guest users
           start_date: values.startDate || null,
           end_date: values.endDate || null,
           status: values.status || 'active',
@@ -90,7 +90,7 @@ export function useProjectMutations(
         name: data.name,
         description: data.description,
         client_id: data.client_id,
-        client_name: data.client_name,
+        client_name: data.client_name || null,
         start_date: data.start_date,
         end_date: data.end_date,
         budget_hours: data.budget_hours,
@@ -141,6 +141,7 @@ export function useProjectMutations(
               name: values.name,
               description: values.description || null,
               client_id: values.clientId || null,
+              client_name: project.client_name || null, // Preserve existing client_name
               start_date: values.startDate || null,
               end_date: values.endDate || null,
               status: values.status || 'active',
@@ -162,6 +163,7 @@ export function useProjectMutations(
             name: values.name,
             description: values.description || null,
             client_id: values.clientId || null,
+            // client_name remains unchanged
             start_date: values.startDate || null,
             end_date: values.endDate || null,
             status: values.status || 'active',
@@ -205,7 +207,7 @@ export function useProjectMutations(
         name: data.name,
         description: data.description,
         client_id: data.client_id,
-        client_name: data.client_name,
+        client_name: data.client_name || null,
         start_date: data.start_date,
         end_date: data.end_date,
         budget_hours: data.budget_hours,
@@ -301,7 +303,7 @@ export function useProjectMutations(
         name: data.name,
         description: data.description,
         client_id: data.client_id,
-        client_name: data.client_name,
+        client_name: data.client_name || null,
         start_date: data.start_date,
         end_date: data.end_date,
         budget_hours: data.budget_hours,
