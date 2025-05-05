@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,13 +11,15 @@ import DescriptionField from "./DescriptionField";
 import KeyboardShortcuts from "./KeyboardShortcuts";
 import { useTimeEntry, Task } from "./hooks";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { toast } from "@/hooks/use-toast";
 
 interface TimeEntryFormProps {
   projects: any[];
   tasks: Record<string, any[]>;
+  onEntrySubmitted?: () => void;
 }
 
-const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
+const TimeEntryForm = ({ projects, tasks, onEntrySubmitted }: TimeEntryFormProps) => {
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   
   const {
@@ -59,6 +61,11 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
     
     if (hoursToSave <= 0) {
       console.log("No hours to submit");
+      toast({
+        title: "No hours to submit",
+        description: "Please enter hours or start the timer before submitting.",
+        variant: "destructive"
+      });
       return;
     }
     
@@ -67,6 +74,10 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
     
     if (success) {
       handleReset();
+      // Call the callback to refresh the time entries list
+      if (onEntrySubmitted) {
+        onEntrySubmitted();
+      }
     }
   };
   
@@ -80,12 +91,21 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
         : 0;
         
     if (hoursToSave <= 0) {
+      toast({
+        title: "No hours to save",
+        description: "Please enter hours or start the timer before saving as draft.",
+        variant: "destructive"
+      });
       return;
     }
     
     const success = await saveTimeEntry(hoursToSave, 'draft');
     if (success) {
       handleReset();
+      // Call the callback to refresh the time entries list
+      if (onEntrySubmitted) {
+        onEntrySubmitted();
+      }
     }
   };
   

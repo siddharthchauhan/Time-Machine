@@ -1,12 +1,36 @@
 
 import { TimeEntry } from "./types";
 import TimeEntryCard from "./TimeEntryCard";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface TimeEntriesTabContentProps {
   entries: TimeEntry[];
+  isLoading?: boolean;
 }
 
-const TimeEntriesTabContent = ({ entries }: TimeEntriesTabContentProps) => {
+const TimeEntriesTabContent = ({ entries, isLoading = false }: TimeEntriesTabContentProps) => {
+  if (isLoading) {
+    return (
+      <div className="space-y-4 mt-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="p-3 rounded-lg border">
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Skeleton className="h-5 w-1/3" />
+                <Skeleton className="h-5 w-1/4" />
+              </div>
+              <div className="flex flex-col space-y-1">
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-3 w-1/4" />
+              </div>
+              <Skeleton className="h-3 w-3/4 mt-2" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  
   return (
     <div className="space-y-4 mt-4">
       {entries.length > 0 ? (
@@ -14,8 +38,11 @@ const TimeEntriesTabContent = ({ entries }: TimeEntriesTabContentProps) => {
           <TimeEntryCard key={entry.id} entry={entry} />
         ))
       ) : (
-        <div className="text-center py-10 text-muted-foreground">
-          No time entries found matching your filters.
+        <div className="text-center py-10 border rounded-lg bg-muted/10">
+          <p className="text-muted-foreground mb-2">No time entries found</p>
+          <p className="text-xs text-muted-foreground">
+            Time entries you submit will appear here
+          </p>
         </div>
       )}
     </div>
