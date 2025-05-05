@@ -73,8 +73,30 @@ export const useTimeEntryForm = () => {
     try {
       const entryDate = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
       
-      // For guest user, don't try to insert into database
+      // For guest user, store in localStorage
       if (profile.id === 'guest') {
+        // Get existing time entries from localStorage or initialize empty array
+        const existingEntries = localStorage.getItem('guestTimeEntries') 
+          ? JSON.parse(localStorage.getItem('guestTimeEntries')!) 
+          : [];
+        
+        // Create new time entry
+        const newEntry = {
+          id: crypto.randomUUID(),
+          project_id: selectedProject,
+          task_id: selectedTask,
+          date: entryDate,
+          hours: hours,
+          description: description,
+          user_id: profile.id,
+          status: status,
+          approval_status: 'pending',
+          created_at: new Date().toISOString()
+        };
+        
+        // Add new entry to localStorage
+        localStorage.setItem('guestTimeEntries', JSON.stringify([...existingEntries, newEntry]));
+        
         // Simulate successful save with a slight delay for better UX
         await new Promise(resolve => setTimeout(resolve, 300));
         

@@ -55,6 +55,7 @@ export const useProjects = () => {
         setProjects(data);
       } else {
         console.log("No projects found or empty data array");
+        setProjects([]);
       }
     } catch (error: any) {
       console.error('Error fetching projects:', error);

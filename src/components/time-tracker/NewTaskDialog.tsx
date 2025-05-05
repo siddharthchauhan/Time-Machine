@@ -67,8 +67,12 @@ const NewTaskDialog = ({ projects, onTaskCreated }: NewTaskDialogProps) => {
         const newTask = {
           id: mockTaskId,
           name: taskName,
-          projectId: selectedProject,
+          project_id: selectedProject,
           description: taskDescription,
+          created_by: profile.id,
+          status: 'pending',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         };
         
         // Get existing tasks from localStorage or initialize empty object

@@ -113,6 +113,11 @@ export const useProjectForm = ({ onProjectCreated, onClose }: UseProjectFormProp
         const newProject = {
           id: mockProjectId,
           name: formValues.name,
+          description: formValues.description || null,
+          status: 'active',
+          created_by: profile.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         };
         
         // Get existing guest projects from localStorage or initialize empty array
