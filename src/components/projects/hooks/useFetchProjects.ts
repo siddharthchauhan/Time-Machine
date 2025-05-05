@@ -32,9 +32,13 @@ export function useFetchProjects() {
             const projectList: Project[] = parsedProjects.map((project: any) => ({
               id: project.id,
               name: project.name,
-              status: project.status,
+              // Ensure status is one of the allowed values
+              status: project.status === 'active' || project.status === 'completed' || 
+                     project.status === 'onHold' || project.status === 'archived' 
+                     ? project.status as 'active' | 'completed' | 'onHold' | 'archived'
+                     : 'active', // Default to active if not valid
               client_id: project.client_id,
-              client_name: "Guest Client", // Default client name for guest projects
+              client_name: project.client_name || "Guest Client", // Default client name for guest projects
               start_date: project.start_date,
               end_date: project.end_date,
               created_at: project.created_at || new Date().toISOString(),
@@ -80,7 +84,11 @@ export function useFetchProjects() {
       const projectList: Project[] = (data || []).map(project => ({
         id: project.id,
         name: project.name,
-        status: project.status,
+        // Ensure status is one of the allowed values
+        status: project.status === 'active' || project.status === 'completed' || 
+               project.status === 'onHold' || project.status === 'archived' 
+               ? project.status as 'active' | 'completed' | 'onHold' | 'archived'
+               : 'active', // Default to active if not valid
         client_id: project.client_id,
         client_name: project.clients?.name || null,
         start_date: project.start_date,

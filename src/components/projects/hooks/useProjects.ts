@@ -37,7 +37,8 @@ export function useProjects(): UseProjectsReturn {
   };
 
   // To make the app compatible with the existing interface, provide these properties
-  const dbConnectionError = error;
+  // Extract error message from Error object or use null if no error
+  const dbConnectionError = error ? error.message : null;
   const retryConnection = () => {
     console.log("Retrying connection...");
     // This would normally reconnect to the database
