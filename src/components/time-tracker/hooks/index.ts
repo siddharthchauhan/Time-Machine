@@ -8,4 +8,5 @@ export { useTimeTrackerData } from './useTimeTrackerData';
 export { useProjects } from './useProjects';
 export { useTasks } from './useTasks';
 export { useProfileRefresh } from './useProfileRefresh';
+export { useProjectForm } from './useProjectForm';
 export type { Task, TimeEntry, TimeEntryStatus } from './types';
