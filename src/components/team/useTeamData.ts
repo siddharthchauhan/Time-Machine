@@ -126,6 +126,7 @@ export const useTeamData = () => {
     handleInputChange,
     handleSelectChange,
     handleAddUser,
-    setNewMember
+    setNewMember,
+    setMembers
   };
 };

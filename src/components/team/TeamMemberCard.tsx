@@ -10,11 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserRole, TeamMember } from "@/components/team/types";
 import { Project } from "@/components/projects/ProjectModel";
-import { MultiSelect } from "./MultiSelect";
+import { useToast } from "@/hooks/use-toast";
 
 interface TeamMemberCardProps {
   member: TeamMember;
   isEditMode?: boolean;
+  onDeleteMember?: (id: string) => void;
 }
 
 const getRoleBadge = (role: UserRole) => {
@@ -30,12 +31,14 @@ const getRoleBadge = (role: UserRole) => {
   }
 };
 
-const TeamMemberCard = ({ member, isEditMode = true }: TeamMemberCardProps) => {
+const TeamMemberCard = ({ member, isEditMode = true, onDeleteMember }: TeamMemberCardProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [editedMember, setEditedMember] = useState<TeamMember>({...member});
   const [selectedProjects, setSelectedProjects] = useState<string[]>(member.projects || []);
+  const { toast } = useToast();
 
   // Fetch projects when the dialog opens
   useEffect(() => {
@@ -127,6 +130,22 @@ const TeamMemberCard = ({ member, isEditMode = true }: TeamMemberCardProps) => {
     console.log("Saving changes for team member:", editedMember);
     setIsDialogOpen(false);
     // Implement actual save functionality as needed
+    toast({
+      title: "Changes saved",
+      description: `${editedMember.name}'s information has been updated`,
+    });
+  };
+
+  const handleDeleteMember = () => {
+    if (onDeleteMember) {
+      onDeleteMember(member.id);
+    }
+    setIsDeleteDialogOpen(false);
+    toast({
+      title: "Team member deleted",
+      description: `${member.name} has been removed from the team`,
+      variant: "destructive",
+    });
   };
 
   return (
@@ -269,9 +288,30 @@ const TeamMemberCard = ({ member, isEditMode = true }: TeamMemberCardProps) => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          <Button size="icon" variant="ghost" className="text-destructive hover:bg-white/10">
-            <Trash className="h-4 w-4" />
-          </Button>
+          
+          <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="icon" variant="ghost" className="text-destructive hover:bg-white/10">
+                <Trash className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-card border border-white/10 shadow-xl">
+              <DialogHeader>
+                <DialogTitle>Delete Team Member</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to remove {member.name} from the team? This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="mt-4">
+                <Button type="button" variant="outline" className="border-white/10" onClick={() => setIsDeleteDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="button" variant="destructive" onClick={handleDeleteMember}>
+                  Delete
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       )}
     </div>

@@ -11,11 +11,13 @@ import { useAuth } from "@/hooks/use-auth";
 import { useTeamData } from "./useTeamData";
 import TeamTabContent from "./TeamTabContent";
 import TeamMemberCard from "./TeamMemberCard";
+import { useToast } from "@/hooks/use-toast";
 
 const TeamList = () => {
   const [filterRole, setFilterRole] = useState('all');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const { profile } = useAuth();
+  const { toast } = useToast();
   
   const {
     members,
@@ -24,10 +26,26 @@ const TeamList = () => {
     handleInputChange,
     handleSelectChange,
     handleAddUser,
-    setNewMember
+    setNewMember,
+    setMembers
   } = useTeamData();
   
   const isProjectManager = profile?.role === 'project_manager' || profile?.role === 'admin';
+
+  const handleDeleteMember = (id: string) => {
+    // Find the member to include name in toast message
+    const memberName = members.find(member => member.id === id)?.name || 'Team member';
+    
+    // Filter out the deleted member
+    const updatedMembers = members.filter(member => member.id !== id);
+    setMembers(updatedMembers);
+    
+    // Show toast notification
+    toast({
+      title: "Team member deleted",
+      description: `${memberName} has been removed from the team`,
+    });
+  };
 
   return (
     <>
@@ -65,14 +83,18 @@ const TeamList = () => {
             )}
             
             <TabsContent value="all">
-              <TeamTabContent members={members} filterRole="all" />
+              <TeamTabContent members={members} filterRole="all" onDeleteMember={handleDeleteMember} />
             </TabsContent>
             
             {(['admin', 'manager', 'member'] as UserRole[]).map(role => (
               <TabsContent key={role} value={role}>
                 <div className="space-y-4 mt-4">
                   {members.filter(member => member.role === role).map((member) => (
-                    <TeamMemberCard key={member.id} member={member} />
+                    <TeamMemberCard 
+                      key={member.id} 
+                      member={member} 
+                      onDeleteMember={handleDeleteMember} 
+                    />
                   ))}
                 </div>
               </TabsContent>
