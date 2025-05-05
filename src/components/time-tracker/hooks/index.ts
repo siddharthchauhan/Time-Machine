@@ -10,3 +10,4 @@ export { useTasks } from './useTasks';
 export { useProfileRefresh } from './useProfileRefresh';
 export { useProjectForm } from './useProjectForm';
 export type { Task, TimeEntry, TimeEntryStatus } from './types';
+export type { ProjectFormValues } from './project-form/types';

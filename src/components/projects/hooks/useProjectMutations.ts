@@ -26,7 +26,47 @@ export function useProjectMutations(
     setIsSubmitting(true);
     
     try {
-      // Insert project into database
+      // Handle guest user specially to avoid UUID errors
+      if (profile.id === 'guest') {
+        // For the guest user, we'll create a mock project with a generated ID
+        const mockProjectId = crypto.randomUUID();
+        
+        // Create new project object
+        const newProject: Project = {
+          id: mockProjectId,
+          name: values.name,
+          description: values.description || null,
+          client_id: values.clientId || null,
+          start_date: values.startDate || null,
+          end_date: values.endDate || null,
+          status: values.status || 'active',
+          budget_hours: values.budgetHours || null,
+          budget_amount: values.budgetAmount || null,
+          created_by: profile.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        
+        // Get existing guest projects from localStorage or initialize empty array
+        const existingProjects = localStorage.getItem('guestProjects') 
+          ? JSON.parse(localStorage.getItem('guestProjects')!) 
+          : [];
+        
+        // Add new project to localStorage
+        localStorage.setItem('guestProjects', JSON.stringify([...existingProjects, newProject]));
+        
+        // Update local state
+        setProjects((prev: Project[]) => [...prev, newProject]);
+        
+        toast({
+          title: "Project created",
+          description: `${values.name} has been created successfully`
+        });
+        
+        return true;
+      }
+      
+      // For real users, insert the project into the database
       const { data, error } = await supabase
         .from("projects")
         .insert({
@@ -71,7 +111,60 @@ export function useProjectMutations(
     setIsSubmitting(true);
     
     try {
-      // Update project in database
+      // Handle guest user specially
+      if (profile?.id === 'guest') {
+        // Get existing projects from localStorage
+        const existingProjects = localStorage.getItem('guestProjects') 
+          ? JSON.parse(localStorage.getItem('guestProjects')!) 
+          : [];
+        
+        // Find and update the project
+        const updatedProjects = existingProjects.map((project: Project) => {
+          if (project.id === projectId) {
+            return {
+              ...project,
+              name: values.name,
+              description: values.description || null,
+              client_id: values.clientId || null,
+              start_date: values.startDate || null,
+              end_date: values.endDate || null,
+              status: values.status || 'active',
+              budget_hours: values.budgetHours || null,
+              budget_amount: values.budgetAmount || null,
+              updated_at: new Date().toISOString()
+            };
+          }
+          return project;
+        });
+        
+        // Save back to localStorage
+        localStorage.setItem('guestProjects', JSON.stringify(updatedProjects));
+        
+        // Update local state
+        setProjects((prev: Project[]) => 
+          prev.map(project => project.id === projectId ? {
+            ...project,
+            name: values.name,
+            description: values.description || null,
+            client_id: values.clientId || null,
+            start_date: values.startDate || null,
+            end_date: values.endDate || null,
+            status: values.status || 'active',
+            budget_hours: values.budgetHours || null,
+            budget_amount: values.budgetAmount || null,
+            updated_at: new Date().toISOString()
+          } : project)
+        );
+        
+        toast({
+          title: "Project updated",
+          description: `${values.name} has been updated successfully`
+        });
+        
+        return true;
+      }
+      
+      // For real users, update the project in the database
       const { data, error } = await supabase
         .from("projects")
         .update({
@@ -119,7 +212,46 @@ export function useProjectMutations(
     setIsSubmitting(true);
     
     try {
-      // Update project status to archived in database
+      // Handle guest user specially
+      if (profile?.id === 'guest') {
+        // Get existing projects from localStorage
+        const existingProjects = localStorage.getItem('guestProjects') 
+          ? JSON.parse(localStorage.getItem('guestProjects')!) 
+          : [];
+        
+        // Find and update the project status to archived
+        const updatedProjects = existingProjects.map((project: Project) => {
+          if (project.id === projectId) {
+            return {
+              ...project,
+              status: "archived",
+              updated_at: new Date().toISOString()
+            };
+          }
+          return project;
+        });
+        
+        // Save back to localStorage
+        localStorage.setItem('guestProjects', JSON.stringify(updatedProjects));
+        
+        // Update local state
+        setProjects((prev: Project[]) => 
+          prev.map(project => project.id === projectId ? {
+            ...project,
+            status: "archived",
+            updated_at: new Date().toISOString()
+          } : project)
+        );
+        
+        toast({
+          title: "Project archived",
+          description: `Project has been archived successfully`
+        });
+        
+        return true;
+      }
+      
+      // For real users, update project status to archived in database
       const { data, error } = await supabase
         .from("projects")
         .update({
