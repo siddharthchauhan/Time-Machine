@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { TeamMember } from "@/components/team/types";
 import MemberInfo from "./MemberInfo";
-import EditDialog from "./EditDialog";
+import EditDialog from "./edit-dialog/EditDialog";
 import DeleteDialog from "./DeleteDialog";
 
 interface TeamMemberCardProps {
