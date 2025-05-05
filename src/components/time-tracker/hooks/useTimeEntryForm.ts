@@ -48,6 +48,8 @@ export const useTimeEntryForm = () => {
   }, [selectedProject, selectedTask, toast, isProfileLoaded]);
 
   const saveTimeEntry = async (hours: number, status: 'draft' | 'submitted'): Promise<boolean> => {
+    console.log("Starting saveTimeEntry with:", { hours, status });
+    
     if (!selectedProject || !selectedTask || !hours) {
       toast({
         title: "Required fields missing",
@@ -72,6 +74,15 @@ export const useTimeEntryForm = () => {
     
     try {
       const entryDate = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+      console.log("Saving time entry with data:", {
+        project_id: selectedProject,
+        task_id: selectedTask,
+        date: entryDate,
+        hours: hours,
+        description: description,
+        user_id: profile.id,
+        status: status
+      });
       
       // For guest user, store in localStorage
       if (profile.id === 'guest') {
@@ -107,11 +118,12 @@ export const useTimeEntryForm = () => {
             : "Your time entry has been submitted for approval",
         });
         
+        console.log("Guest time entry saved to localStorage");
         return true;
       }
       
       // For real users, create a new time entry in the database
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('time_entries')
         .insert({
           project_id: selectedProject,
@@ -122,9 +134,15 @@ export const useTimeEntryForm = () => {
           user_id: profile.id,
           status: status,
           approval_status: 'pending'
-        });
+        })
+        .select();
         
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error saving time entry:", error);
+        throw error;
+      }
+      
+      console.log("Time entry saved to database:", data);
       
       toast({
         title: status === 'draft' ? "Time entry saved" : "Time entry submitted",

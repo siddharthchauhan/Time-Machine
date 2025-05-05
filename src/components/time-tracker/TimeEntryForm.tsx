@@ -46,11 +46,26 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
   } = useTimeEntry(projects, tasks);
   
   const handleSubmit = async () => {
-    // Convert manualHours from string to number
-    const hours = parseFloat(manualHours);
-    if (hours > 0 || trackingDuration > 0) {
-      const hoursToSave = hours > 0 ? hours : trackingDuration / 3600; // 3600 seconds in an hour
-      await saveTimeEntry(hoursToSave, 'submitted');
+    console.log("Submit button clicked");
+    // Convert manualHours from string to number or use tracking duration
+    const hoursFromInput = parseFloat(manualHours);
+    const hoursToSave = hoursFromInput > 0 
+      ? hoursFromInput 
+      : trackingDuration > 0 
+        ? trackingDuration / 3600 // Convert seconds to hours
+        : 0;
+    
+    console.log("Hours to save:", hoursToSave);
+    
+    if (hoursToSave <= 0) {
+      console.log("No hours to submit");
+      return;
+    }
+    
+    const success = await saveTimeEntry(hoursToSave, 'submitted');
+    console.log("Submission result:", success);
+    
+    if (success) {
       handleReset();
     }
   };
@@ -58,11 +73,28 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
   const handleSaveDraft = async () => {
     // Convert manualHours from string to number
     const hours = parseFloat(manualHours);
-    if (hours > 0 || trackingDuration > 0) {
-      const hoursToSave = hours > 0 ? hours : trackingDuration / 3600; // 3600 seconds in an hour
-      await saveTimeEntry(hoursToSave, 'draft');
+    const hoursToSave = hours > 0 
+      ? hours 
+      : trackingDuration > 0 
+        ? trackingDuration / 3600 
+        : 0;
+        
+    if (hoursToSave <= 0) {
+      return;
+    }
+    
+    const success = await saveTimeEntry(hoursToSave, 'draft');
+    if (success) {
       handleReset();
     }
+  };
+  
+  // Determine if submit/save should be disabled
+  const isFormSubmittable = () => {
+    const hasHours = parseFloat(manualHours) > 0 || trackingDuration > 0;
+    const hasProject = !!selectedProject;
+    const hasTask = !!selectedTask;
+    return hasHours && hasProject && hasTask && !isTracking && !isSubmitting && isProfileLoaded;
   };
   
   return (
@@ -135,14 +167,14 @@ const TimeEntryForm = ({ projects, tasks }: TimeEntryFormProps) => {
         <Button 
           variant="outline" 
           onClick={handleSaveDraft}
-          disabled={isTracking || isSubmitting || !isProfileLoaded}
+          disabled={!isFormSubmittable()}
         >
           <Save className="h-4 w-4 mr-2" />
           Save Draft
         </Button>
         <Button 
           onClick={handleSubmit}
-          disabled={isTracking || isSubmitting || !isProfileLoaded}
+          disabled={!isFormSubmittable()}
         >
           Submit
         </Button>
