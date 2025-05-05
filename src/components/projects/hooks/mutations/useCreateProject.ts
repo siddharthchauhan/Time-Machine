@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { Project, ProjectFormValues } from "../../ProjectModel";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -28,11 +27,11 @@ export function useCreateProject(
           name: values.name,
           description: values.description,
           status: values.status,
-          client_id: values.client_id,
-          start_date: values.start_date,
-          end_date: values.end_date,
-          budget_amount: parseFloat(values.budget_amount || '0'),
-          budget_hours: parseFloat(values.budget_hours || '0'),
+          client_id: values.clientId,
+          start_date: values.startDate,
+          end_date: values.endDate,
+          budget_amount: parseFloat(values.budgetAmount?.toString() || '0'),
+          budget_hours: parseFloat(values.budgetHours?.toString() || '0'),
           created_by: 'guest',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -46,16 +45,20 @@ export function useCreateProject(
         // Add new project and save to localStorage
         localStorage.setItem('guestProjects', JSON.stringify([...existingProjects, newProject]));
         
-        // Update the projects state
-        // We need to create a Project object from the form values
+        // Update the projects state with a valid Project object
         const newProjectForState: Project = {
           id: newProject.id,
           name: values.name,
+          description: values.description,
           status: values.status,
-          client_id: values.client_id,
+          client_id: values.clientId,
           client_name: "Guest Client", // Default client name for guest user
-          start_date: values.start_date,
-          end_date: values.end_date
+          start_date: values.startDate,
+          end_date: values.endDate,
+          budget_hours: values.budgetHours,
+          budget_amount: values.budgetAmount,
+          created_at: newProject.created_at,
+          updated_at: newProject.updated_at
         };
         
         setProjects(prev => [...prev, newProjectForState]);
@@ -75,11 +78,11 @@ export function useCreateProject(
           name: values.name,
           description: values.description,
           status: values.status,
-          client_id: values.client_id,
-          start_date: values.start_date,
-          end_date: values.end_date,
-          budget_amount: values.budget_amount ? parseFloat(values.budget_amount) : null,
-          budget_hours: values.budget_hours ? parseFloat(values.budget_hours) : null,
+          client_id: values.clientId,
+          start_date: values.startDate,
+          end_date: values.endDate,
+          budget_amount: values.budgetAmount ? parseFloat(values.budgetAmount.toString()) : null,
+          budget_hours: values.budgetHours ? parseFloat(values.budgetHours.toString()) : null,
           created_by: user.id
         })
         .select();
@@ -93,11 +96,11 @@ export function useCreateProject(
       if (data && data.length > 0) {
         // Get the client name if a client was selected
         let clientName = "";
-        if (values.client_id) {
+        if (values.clientId) {
           const { data: clientData } = await supabase
             .from('clients')
             .select('name')
-            .eq('id', values.client_id)
+            .eq('id', values.clientId)
             .single();
             
           if (clientData) {
@@ -109,11 +112,16 @@ export function useCreateProject(
         const newProject: Project = {
           id: data[0].id,
           name: values.name,
+          description: values.description,
           status: values.status,
-          client_id: values.client_id,
+          client_id: values.clientId,
           client_name: clientName,
-          start_date: values.start_date,
-          end_date: values.end_date
+          start_date: values.startDate,
+          end_date: values.endDate,
+          budget_hours: values.budgetHours,
+          budget_amount: values.budgetAmount,
+          created_at: data[0].created_at,
+          updated_at: data[0].updated_at
         };
         
         setProjects(prev => [...prev, newProject]);

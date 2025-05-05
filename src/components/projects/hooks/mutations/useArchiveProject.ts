@@ -43,15 +43,9 @@ export function useArchiveProject(
           setProjects(prev => 
             prev.map(project => {
               if (project.id === projectId) {
-                const { id, name, status, client_id, client_name, start_date, end_date } = project;
                 return {
-                  id,
-                  name,
-                  status: 'archived',
-                  client_id,
-                  client_name,
-                  start_date,
-                  end_date
+                  ...project, // Preserve all existing properties
+                  status: 'archived'
                 };
               }
               return project;
@@ -89,7 +83,10 @@ export function useArchiveProject(
       setProjects(prev => 
         prev.map(project => {
           if (project.id === projectId) {
-            return { ...project, status: 'archived' };
+            return {
+              ...project, // Preserve all existing properties
+              status: 'archived'
+            };
           }
           return project;
         })

@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { Project, ProjectFormValues } from "../../ProjectModel";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -36,11 +35,11 @@ export function useUpdateProject(
                 name: values.name,
                 description: values.description,
                 status: values.status,
-                client_id: values.client_id,
-                start_date: values.start_date,
-                end_date: values.end_date,
-                budget_amount: parseFloat(values.budget_amount || '0'),
-                budget_hours: parseFloat(values.budget_hours || '0'),
+                client_id: values.clientId,
+                start_date: values.startDate,
+                end_date: values.endDate,
+                budget_amount: parseFloat(values.budgetAmount?.toString() || '0'),
+                budget_hours: parseFloat(values.budgetHours?.toString() || '0'),
                 updated_at: new Date().toISOString()
               };
             }
@@ -54,16 +53,22 @@ export function useUpdateProject(
           setProjects(prev => 
             prev.map(project => {
               if (project.id === projectId) {
-                const clientName = project.client_name || "Guest Client";
+                // Find the current project to preserve its other properties
+                const currentProject = prev.find(p => p.id === projectId);
+                const clientName = currentProject?.client_name || "Guest Client";
                 
                 return {
-                  id: project.id,
+                  ...currentProject!, // Copy all existing properties
                   name: values.name,
+                  description: values.description,
                   status: values.status,
-                  client_id: values.client_id,
+                  client_id: values.clientId,
                   client_name: clientName,
-                  start_date: values.start_date,
-                  end_date: values.end_date
+                  start_date: values.startDate,
+                  end_date: values.endDate,
+                  budget_hours: values.budgetHours,
+                  budget_amount: values.budgetAmount,
+                  updated_at: new Date().toISOString()
                 };
               }
               return project;
@@ -94,11 +99,11 @@ export function useUpdateProject(
           name: values.name,
           description: values.description,
           status: values.status,
-          client_id: values.client_id,
-          start_date: values.start_date,
-          end_date: values.end_date,
-          budget_amount: values.budget_amount ? parseFloat(values.budget_amount) : null,
-          budget_hours: values.budget_hours ? parseFloat(values.budget_hours) : null,
+          client_id: values.clientId,
+          start_date: values.startDate,
+          end_date: values.endDate,
+          budget_amount: values.budgetAmount ? parseFloat(values.budgetAmount.toString()) : null,
+          budget_hours: values.budgetHours ? parseFloat(values.budgetHours.toString()) : null,
           updated_at: new Date().toISOString()
         })
         .eq('id', projectId);
@@ -109,11 +114,11 @@ export function useUpdateProject(
       
       // Get the client name if a client was selected
       let clientName = "";
-      if (values.client_id) {
+      if (values.clientId) {
         const { data: clientData } = await supabase
           .from('clients')
           .select('name')
-          .eq('id', values.client_id)
+          .eq('id', values.clientId)
           .single();
           
         if (clientData) {
@@ -121,18 +126,25 @@ export function useUpdateProject(
         }
       }
       
-      // Update the projects state
+      // Update the projects state 
       setProjects(prev => 
         prev.map(project => {
           if (project.id === projectId) {
+            // Find the current project to preserve its other properties
+            const currentProject = prev.find(p => p.id === projectId);
+            
             return {
-              id: project.id,
+              ...currentProject!, // Copy all existing properties
               name: values.name,
+              description: values.description,
               status: values.status,
-              client_id: values.client_id,
-              client_name: clientName,
-              start_date: values.start_date,
-              end_date: values.end_date
+              client_id: values.clientId,
+              client_name: clientName || currentProject?.client_name,
+              start_date: values.startDate,
+              end_date: values.endDate,
+              budget_hours: values.budgetHours,
+              budget_amount: values.budgetAmount,
+              updated_at: new Date().toISOString()
             };
           }
           return project;
