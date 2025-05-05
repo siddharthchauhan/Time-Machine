@@ -42,7 +42,6 @@ export function useProjectMutations(
           status: values.status || 'active',
           budget_hours: values.budgetHours || null,
           budget_amount: values.budgetAmount || null,
-          created_by: profile.id,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
@@ -85,8 +84,24 @@ export function useProjectMutations(
       
       if (error) throw error;
       
+      // Convert to Project type to ensure compatibility
+      const newProject: Project = {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        client_id: data.client_id,
+        client_name: data.client_name,
+        start_date: data.start_date,
+        end_date: data.end_date,
+        budget_hours: data.budget_hours,
+        budget_amount: data.budget_amount,
+        status: data.status as "active" | "completed" | "onHold" | "archived",
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      };
+      
       // Update local state
-      setProjects((prev: Project[]) => [...prev, data as Project]);
+      setProjects((prev: Project[]) => [...prev, newProject]);
       
       toast({
         title: "Project created",
@@ -184,9 +199,25 @@ export function useProjectMutations(
       
       if (error) throw error;
       
+      // Convert to Project type to ensure compatibility
+      const updatedProject: Project = {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        client_id: data.client_id,
+        client_name: data.client_name,
+        start_date: data.start_date,
+        end_date: data.end_date,
+        budget_hours: data.budget_hours,
+        budget_amount: data.budget_amount,
+        status: data.status as "active" | "completed" | "onHold" | "archived",
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      };
+      
       // Update local state
       setProjects((prev: Project[]) => 
-        prev.map(project => project.id === projectId ? (data as Project) : project)
+        prev.map(project => project.id === projectId ? updatedProject : project)
       );
       
       toast({
@@ -224,7 +255,7 @@ export function useProjectMutations(
           if (project.id === projectId) {
             return {
               ...project,
-              status: "archived",
+              status: "archived" as "active" | "completed" | "onHold" | "archived",
               updated_at: new Date().toISOString()
             };
           }
@@ -264,9 +295,25 @@ export function useProjectMutations(
       
       if (error) throw error;
       
+      // Convert to Project type to ensure compatibility
+      const archivedProject: Project = {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        client_id: data.client_id,
+        client_name: data.client_name,
+        start_date: data.start_date,
+        end_date: data.end_date,
+        budget_hours: data.budget_hours,
+        budget_amount: data.budget_amount,
+        status: data.status as "active" | "completed" | "onHold" | "archived",
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      };
+      
       // Update local state
       setProjects((prev: Project[]) => 
-        prev.map(project => project.id === projectId ? (data as Project) : project)
+        prev.map(project => project.id === projectId ? archivedProject : project)
       );
       
       toast({
