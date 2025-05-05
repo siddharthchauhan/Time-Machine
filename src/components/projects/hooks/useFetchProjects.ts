@@ -36,7 +36,9 @@ export function useFetchProjects() {
               client_id: project.client_id,
               client_name: "Guest Client", // Default client name for guest projects
               start_date: project.start_date,
-              end_date: project.end_date
+              end_date: project.end_date,
+              created_at: project.created_at || new Date().toISOString(),
+              updated_at: project.updated_at || new Date().toISOString()
             }));
             
             setProjects(projectList);
@@ -82,7 +84,9 @@ export function useFetchProjects() {
         client_id: project.client_id,
         client_name: project.clients?.name || null,
         start_date: project.start_date,
-        end_date: project.end_date
+        end_date: project.end_date,
+        created_at: project.created_at,
+        updated_at: project.updated_at
       }));
       
       setProjects(projectList);

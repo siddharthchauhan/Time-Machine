@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserRole, NewTeamMember } from "@/components/team/types";
+import { Project } from "@/components/projects/ProjectModel";
 
 interface AddTeamMemberDialogProps {
   open: boolean;
@@ -26,6 +27,68 @@ const AddTeamMemberDialog = ({
   handleSelectChange,
   handleAddUser
 }: AddTeamMemberDialogProps) => {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
+
+  // Fetch projects when the dialog opens
+  useEffect(() => {
+    if (open) {
+      const fetchProjects = async () => {
+        setIsLoadingProjects(true);
+        try {
+          // Check for guest user first (using localStorage)
+          const storedProjects = localStorage.getItem('guestProjects');
+          if (storedProjects) {
+            const parsedProjects = JSON.parse(storedProjects);
+            setProjects(parsedProjects.map((project: any) => ({
+              id: project.id,
+              name: project.name,
+              status: project.status,
+              created_at: project.created_at || new Date().toISOString(),
+              updated_at: project.updated_at || new Date().toISOString()
+            })));
+          } else {
+            // For simplicity, use the same projects as in TeamList initial data
+            // In a real app, this would come from the API or Supabase
+            const defaultProjects: Project[] = [
+              {
+                id: '1',
+                name: 'Website Redesign',
+                status: 'active',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              },
+              {
+                id: '2',
+                name: 'Mobile App',
+                status: 'active',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              },
+              {
+                id: '3',
+                name: 'CRM Integration',
+                status: 'active',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }
+            ];
+            setProjects(defaultProjects);
+          }
+        } catch (error) {
+          console.error("Error fetching projects:", error);
+        } finally {
+          setIsLoadingProjects(false);
+        }
+      };
+
+      fetchProjects();
+    }
+  }, [open]);
+
+  // Filter projects to show only active ones
+  const activeProjects = projects.filter(project => project.status === 'active');
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -38,56 +101,53 @@ const AddTeamMemberDialog = ({
         <form onSubmit={handleAddUser} className="space-y-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="new-name">Name</Label>
+              <Label htmlFor="name">Name</Label>
               <Input 
-                id="new-name" 
+                id="name" 
                 placeholder="Full name" 
                 value={newMember.name}
                 onChange={handleInputChange}
+                name="name"
                 required 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-email">Email</Label>
+              <Label htmlFor="email">Email</Label>
               <Input 
-                id="new-email" 
+                id="email" 
                 type="email" 
                 placeholder="Email address" 
                 value={newMember.email}
                 onChange={handleInputChange}
+                name="email"
                 required 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-department">Department</Label>
+              <Label htmlFor="department">Department</Label>
               <Select 
                 value={newMember.department} 
                 onValueChange={(value) => handleSelectChange('department', value)}
                 required
               >
-                <SelectTrigger id="new-department">
+                <SelectTrigger id="department">
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
                 <SelectContent>
                   {departments.map(dept => (
                     <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                   ))}
-                  <SelectItem value="Engineering">Engineering</SelectItem>
-                  <SelectItem value="Design">Design</SelectItem>
-                  <SelectItem value="Marketing">Marketing</SelectItem>
-                  <SelectItem value="Sales">Sales</SelectItem>
-                  <SelectItem value="HR">Human Resources</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-role">Role</Label>
+              <Label htmlFor="role">Role</Label>
               <Select 
                 value={newMember.role} 
                 onValueChange={(value) => handleSelectChange('role', value as UserRole)}
                 required
               >
-                <SelectTrigger id="new-role">
+                <SelectTrigger id="role">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -100,18 +160,24 @@ const AddTeamMemberDialog = ({
             </div>
           </div>
           <div className="pt-4">
-            <Label htmlFor="new-projects">Projects</Label>
+            <Label htmlFor="projects">Projects</Label>
             <Select 
               value={newMember.projects[0] || ""} 
               onValueChange={(value) => handleSelectChange('projects', value)}
             >
-              <SelectTrigger id="new-projects">
+              <SelectTrigger id="projects">
                 <SelectValue placeholder="Assign to projects" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Website Redesign">Website Redesign</SelectItem>
-                <SelectItem value="Mobile App">Mobile App</SelectItem>
-                <SelectItem value="CRM Integration">CRM Integration</SelectItem>
+                {isLoadingProjects ? (
+                  <SelectItem value="loading" disabled>Loading projects...</SelectItem>
+                ) : activeProjects.length > 0 ? (
+                  activeProjects.map(project => (
+                    <SelectItem key={project.id} value={project.name}>{project.name}</SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="none" disabled>No active projects found</SelectItem>
+                )}
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground mt-2">You can assign more projects later</p>

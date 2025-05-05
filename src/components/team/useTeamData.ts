@@ -64,10 +64,12 @@ export const useTeamData = () => {
   const departments = Array.from(new Set(members.map(member => member.department)));
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
+    const { id, name, value } = e.target;
+    const fieldName = name || id;
+    
     setNewMember({
       ...newMember,
-      [id.replace('new-', '')]: value
+      [fieldName]: value
     });
   };
   
