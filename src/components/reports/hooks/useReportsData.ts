@@ -247,7 +247,7 @@ export function useReportsData(selectedDate: Date, selectedProjectId: string = '
   return {
     isLoading,
     error,
-    timeEntries,
+    timeEntries,  // Now explicitly returning timeEntries for use in export
     projects,
     weeklyChartData: weeklyChartData(),
     projectChartData: projectChartData(),

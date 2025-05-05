@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { 
   addWeeks, 
@@ -6,7 +7,8 @@ import {
   startOfMonth,
   startOfQuarter,
   subMonths,
-  subQuarters
+  subQuarters,
+  format
 } from "date-fns";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -18,11 +20,13 @@ import WeeklyBarChart from "@/components/reports/charts/WeeklyBarChart";
 import ProjectPieChart from "@/components/reports/charts/ProjectPieChart";
 import WeeklySummary from "@/components/reports/WeeklySummary";
 import { useReportsData } from "@/components/reports/hooks/useReportsData";
+import { useToast } from "@/hooks/use-toast";
 
 const Reports = () => {
   const [date, setDate] = useState<Date>(new Date());
   const [selectedProject, setSelectedProject] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState('current');
+  const { toast } = useToast();
   
   // Update the date when time period changes
   useEffect(() => {
@@ -56,14 +60,58 @@ const Reports = () => {
     projects,
     weeklyChartData,
     projectChartData,
-    summary
+    summary,
+    timeEntries
   } = useReportsData(date, selectedProject);
   
   const handleExportData = () => {
-    // This would be implemented to export data as CSV, PDF, etc.
-    console.log("Export data functionality to be implemented");
-    // For now just show what data would be exported
-    console.log("Data to export:", { weeklyChartData, projectChartData, summary });
+    try {
+      // Create CSV content for time entries
+      const headers = [
+        "Date",
+        "Project",
+        "Hours",
+        "Description"
+      ].join(",");
+      
+      const rows = timeEntries.map(entry => [
+        entry.date,
+        entry.project_name || 'Unknown Project',
+        entry.hours,
+        `"${(entry.description || '').replace(/"/g, '""')}"` // Escape quotes in CSV
+      ].join(","));
+      
+      const csvContent = [headers, ...rows].join("\n");
+      
+      // Create a Blob with the CSV data
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      
+      // Create a URL for the Blob
+      const url = URL.createObjectURL(blob);
+      
+      // Create a link element and trigger a click
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `time-report-${format(date, 'yyyy-MM-dd')}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Export successful",
+        description: "Your time report has been exported as CSV.",
+      });
+    } catch (err) {
+      console.error("Export error:", err);
+      toast({
+        title: "Export failed",
+        description: "There was an error exporting your data. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
   return (
@@ -76,7 +124,7 @@ const Reports = () => {
               Analyze time data and generate reports for your projects.
             </p>
           </div>
-          <Button onClick={handleExportData}>
+          <Button onClick={handleExportData} disabled={isLoading || timeEntries.length === 0}>
             <Download className="mr-2 h-4 w-4" />
             Export Data
           </Button>
