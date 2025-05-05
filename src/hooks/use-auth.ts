@@ -1,8 +1,7 @@
-
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/lib/auth';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -13,9 +12,116 @@ export const useAuth = () => {
   const [isReady, setIsReady] = useState(false);
   const [loadError, setLoadError] = useState<any>(null);
 
+  // Improved profile refresh function with better error handling
+  const refreshProfile = useCallback(async (): Promise<UserProfile | null> => {
+    if (!user) {
+      console.log("Cannot refresh profile - no user");
+      return null;
+    }
+    
+    try {
+      console.log("Refreshing profile for user:", user.id);
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+        
+      if (error) {
+        console.error("Database error fetching profile:", error);
+        throw error;
+      }
+      
+      if (data) {
+        console.log("Profile loaded successfully:", data.id);
+        setProfile(data);
+        setLoadError(null);
+        return data;
+      }
+      
+      console.log("Profile not found in database, creating or retrieving minimal profile");
+      
+      // Try to insert a profile if it doesn't exist
+      const { data: newProfile, error: insertError } = await supabase
+        .from('profiles')
+        .insert({
+          id: user.id,
+          email: user.email,
+          full_name: user.user_metadata?.full_name || user.email || 'User'
+        })
+        .select()
+        .maybeSingle();
+        
+      if (insertError && insertError.code !== '23505') { // Not a duplicate key error
+        console.error("Error creating profile:", insertError);
+        
+        // If we can't create a profile, use a minimal profile object
+        const fallbackProfile: UserProfile = {
+          id: user.id,
+          email: user.email || undefined,
+          full_name: user.user_metadata?.full_name || user.email || 'User'
+        };
+        
+        setProfile(fallbackProfile);
+        setLoadError(null);
+        return fallbackProfile;
+      }
+      
+      if (newProfile) {
+        console.log("New profile created:", newProfile.id);
+        setProfile(newProfile);
+        setLoadError(null);
+        return newProfile;
+      }
+      
+      // If insert failed due to duplicate key, try fetching again
+      const { data: existingProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+        
+      if (fetchError) {
+        throw fetchError;
+      }
+      
+      if (existingProfile) {
+        console.log("Existing profile found on retry:", existingProfile.id);
+        setProfile(existingProfile);
+        setLoadError(null);
+        return existingProfile;
+      }
+      
+      // Create a minimal profile as last resort
+      const guestProfile: UserProfile = {
+        id: user.id,
+        email: user.email || undefined,
+        full_name: user.user_metadata?.full_name || user.email || 'User'
+      };
+      
+      setProfile(guestProfile);
+      setLoadError(null);
+      return guestProfile;
+    } catch (error) {
+      console.error('Error refreshing profile:', error);
+      setLoadError(error);
+      
+      // Create a basic profile to prevent further errors
+      const fallbackProfile: UserProfile = {
+        id: user.id,
+        email: user.email || undefined,
+        full_name: user.user_metadata?.full_name || user.email || 'User'
+      };
+      
+      setProfile(fallbackProfile);
+      return fallbackProfile;
+    }
+  }, [user]);
+
   useEffect(() => {
     let isMounted = true;
-    let profileLoaded = false;
+    let profileAttempted = false;
 
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -35,20 +141,27 @@ export const useAuth = () => {
         }
         
         // When user signs in, immediately try to load profile
-        if (event === 'SIGNED_IN' && currentSession?.user && !profileLoaded) {
+        if (event === 'SIGNED_IN' && currentSession?.user && !profileAttempted) {
           try {
-            profileLoaded = true;
-            const userProfile = await refreshProfile();
-            if (isMounted) {
-              setIsReady(true);
-              setLoadError(null);
-            }
+            profileAttempted = true;
+            setTimeout(async () => { // Use setTimeout to prevent React errors
+              try {
+                if (isMounted) {
+                  await refreshProfile();
+                  if (isMounted) {
+                    setIsReady(true);
+                  }
+                }
+              } catch (error) {
+                console.error("Error loading profile on auth state change:", error);
+                if (isMounted) {
+                  setLoadError(error);
+                  setIsReady(true);
+                }
+              }
+            }, 0);
           } catch (error) {
-            console.error("Error loading profile on auth state change:", error);
-            if (isMounted) {
-              setLoadError(error);
-              setIsReady(true);
-            }
+            console.error("Error in auth state change handler:", error);
           }
         }
       }
@@ -64,19 +177,29 @@ export const useAuth = () => {
       setUser(currentSession?.user ?? null);
       setIsLoading(false);
       
-      if (currentSession?.user && !profileLoaded) {
+      if (currentSession?.user && !profileAttempted) {
         // Try to load the profile
         try {
-          profileLoaded = true;
-          const userProfile = await refreshProfile();
-          if (isMounted) {
-            setIsReady(true);
-            setLoadError(null);
-          }
+          profileAttempted = true;
+          setTimeout(async () => { // Use setTimeout to prevent React errors
+            try {
+              if (isMounted) {
+                await refreshProfile();
+                if (isMounted) {
+                  setIsReady(true);
+                }
+              }
+            } catch (error) {
+              console.error('Error loading profile on init:', error);
+              if (isMounted) {
+                setLoadError(error);
+                setIsReady(true);
+              }
+            }
+          }, 0);
         } catch (error) {
-          console.error('Error loading profile on init:', error);
+          console.error("Error in initial profile load:", error);
           if (isMounted) {
-            setLoadError(error);
             setIsReady(true);
           }
         }
@@ -91,7 +214,7 @@ export const useAuth = () => {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [refreshProfile]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -134,55 +257,6 @@ export const useAuth = () => {
       // The auth state listener will handle updating the state
     } catch (error) {
       console.error('Sign out error:', error);
-    }
-  };
-
-  const refreshProfile = async (): Promise<UserProfile | null> => {
-    if (!user) {
-      console.log("Cannot refresh profile - no user");
-      return null;
-    }
-    
-    try {
-      console.log("Refreshing profile for user:", user.id);
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
-        
-      if (error) throw error;
-      
-      if (data) {
-        console.log("Profile loaded:", data.id);
-        setProfile(data);
-        return data;
-      }
-      
-      console.log("Profile not found in database, creating guest profile");
-      // If no profile found, create a minimal guest profile
-      const guestProfile: UserProfile = {
-        id: user.id,
-        email: user.email || undefined,
-        full_name: user.user_metadata?.full_name || user.email || 'User'
-      };
-      
-      setProfile(guestProfile);
-      return guestProfile;
-    } catch (error) {
-      console.error('Error refreshing profile:', error);
-      setLoadError(error);
-      
-      // Create a basic profile to prevent further errors
-      const fallbackProfile: UserProfile = {
-        id: user.id,
-        email: user.email || undefined,
-        full_name: user.user_metadata?.full_name || user.email || 'User'
-      };
-      
-      setProfile(fallbackProfile);
-      return fallbackProfile;
     }
   };
 

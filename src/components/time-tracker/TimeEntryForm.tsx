@@ -2,25 +2,35 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { RefreshCw, PlayCircle, PauseCircle, AlertCircle, Save } from "lucide-react";
 import DatePicker from "./DatePicker";
 import ProjectTaskSelector from "./ProjectTaskSelector";
 import TimeTracker from "./TimeTracker";
 import DescriptionField from "./DescriptionField";
 import KeyboardShortcuts from "./KeyboardShortcuts";
-import { useTimeEntry, Task } from "./hooks";
+import { useTimeEntry } from "./hooks";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface TimeEntryFormProps {
   projects: any[];
   tasks: Record<string, any[]>;
   onEntrySubmitted?: () => void;
+  profileLoaded?: boolean;
+  onProfileRefresh?: () => Promise<void>;
+  isRefreshing?: boolean;
 }
 
-const TimeEntryForm = ({ projects, tasks, onEntrySubmitted }: TimeEntryFormProps) => {
+const TimeEntryForm = ({ 
+  projects, 
+  tasks, 
+  onEntrySubmitted,
+  profileLoaded = false,
+  onProfileRefresh,
+  isRefreshing = false
+}: TimeEntryFormProps) => {
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const { toast } = useToast();
   
   const {
     date,
@@ -41,11 +51,14 @@ const TimeEntryForm = ({ projects, tasks, onEntrySubmitted }: TimeEntryFormProps
     handlePauseTracking,
     handleResumeTracking,
     isSubmitting,
-    isProfileLoaded,
+    isProfileLoaded: hookProfileLoaded,
     saveTimeEntry,
     handleReset,
     refreshProfile
   } = useTimeEntry(projects, tasks);
+  
+  // Combine external profileLoaded with hook's internal state
+  const isProfileAvailable = profileLoaded || hookProfileLoaded;
   
   const handleSubmit = async () => {
     console.log("Submit button clicked");
@@ -114,7 +127,25 @@ const TimeEntryForm = ({ projects, tasks, onEntrySubmitted }: TimeEntryFormProps
     const hasHours = parseFloat(manualHours) > 0 || trackingDuration > 0;
     const hasProject = !!selectedProject;
     const hasTask = !!selectedTask;
-    return hasHours && hasProject && hasTask && !isTracking && !isSubmitting && isProfileLoaded;
+    return hasHours && hasProject && hasTask && !isTracking && !isSubmitting && isProfileAvailable;
+  };
+  
+  // Handle profile refresh button click
+  const handleProfileRefreshClick = async () => {
+    try {
+      if (onProfileRefresh) {
+        await onProfileRefresh();
+      } else {
+        await refreshProfile();
+      }
+    } catch (error) {
+      console.error("Error refreshing profile:", error);
+      toast({
+        title: "Profile refresh failed",
+        description: "Please try again or reload the page",
+        variant: "destructive"
+      });
+    }
   };
   
   return (
@@ -132,22 +163,23 @@ const TimeEntryForm = ({ projects, tasks, onEntrySubmitted }: TimeEntryFormProps
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!isProfileLoaded && (
-          <Alert variant="destructive" className="mb-4">
+        {!isProfileAvailable && (
+          <Alert variant="destructive" className="bg-amber-50 border-amber-200 mb-4">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Profile data not loaded</AlertTitle>
+            <AlertTitle className="text-amber-600">Profile data not loaded</AlertTitle>
             <div className="flex items-center justify-between">
-              <AlertDescription>
+              <AlertDescription className="text-amber-600">
                 Your profile is required to track time.
               </AlertDescription>
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={refreshProfile}
+                onClick={handleProfileRefreshClick}
                 className="ml-2 h-8"
+                disabled={isRefreshing}
               >
-                <RefreshCw className="h-3.5 w-3.5 mr-1" />
-                Refresh
+                <RefreshCw className={`h-3.5 w-3.5 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Refreshing...' : 'Refresh'}
               </Button>
             </div>
           </Alert>
@@ -162,7 +194,7 @@ const TimeEntryForm = ({ projects, tasks, onEntrySubmitted }: TimeEntryFormProps
           setSelectedProject={setSelectedProject}
           selectedTask={selectedTask}
           setSelectedTask={setSelectedTask}
-          disabled={isTracking}
+          disabled={isTracking || !isProfileAvailable}
         />
         
         <DescriptionField 
@@ -179,6 +211,7 @@ const TimeEntryForm = ({ projects, tasks, onEntrySubmitted }: TimeEntryFormProps
           handleStopTracking={handleStopTracking}
           handlePauseTracking={handlePauseTracking}
           isPaused={isPaused}
+          disabled={!isProfileAvailable}
         />
         
         {showKeyboardShortcuts && <KeyboardShortcuts />}

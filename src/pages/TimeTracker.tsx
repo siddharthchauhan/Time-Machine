@@ -20,19 +20,22 @@ const TimeTracker = () => {
     handleTaskCreated,
     handleBatchTasksCreated,
     isReady,
-    profile
+    profile,
+    isRefreshing
   } = useTimeTrackerData();
   
   const { toast } = useToast();
   
   useEffect(() => {
-    if (isReady) {
+    if (isReady && profile?.id) {
       console.log("Profile is ready, fetching projects");
-      fetchProjects();
+      fetchProjects().catch(error => {
+        console.error("Error fetching projects:", error);
+      });
     } else {
       console.log("Profile not ready yet, waiting...");
     }
-  }, [isReady, fetchProjects]);
+  }, [isReady, profile, fetchProjects]);
   
   useEffect(() => {
     console.log("TimeTracker rendered with:", { 
@@ -57,12 +60,17 @@ const TimeTracker = () => {
           databaseError={databaseError}
           onProfileRefresh={handleProfileRefresh}
           onRetryProjects={fetchProjects}
+          isRefreshing={isRefreshing}
         />
         
         <TimeTrackerContent
           isLoadingProjects={isLoadingProjects}
           projects={projects || []}
           tasks={tasks || {}}
+          profile={profile}
+          isReady={isReady}
+          onProfileRefresh={handleProfileRefresh}
+          isRefreshing={isRefreshing}
         />
       </div>
     </MainLayout>

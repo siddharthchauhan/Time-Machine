@@ -2,39 +2,31 @@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, Database, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ProfileErrorAlert from "./ProfileErrorAlert";
 
 interface TimeTrackerAlertsProps {
   loadError: any;
   databaseError: string | null;
   onProfileRefresh: () => Promise<void>;
   onRetryProjects: () => Promise<void>;
+  isRefreshing?: boolean;
 }
 
 const TimeTrackerAlerts = ({
   loadError,
   databaseError,
   onProfileRefresh,
-  onRetryProjects
+  onRetryProjects,
+  isRefreshing = false
 }: TimeTrackerAlertsProps) => {
   return (
     <div className="space-y-4">
       {loadError && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Authentication Error</AlertTitle>
-          <AlertDescription className="flex flex-col gap-2">
-            <p>There was a problem loading your user profile.</p>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-fit" 
-              onClick={onProfileRefresh}
-            >
-              <RefreshCcw className="mr-2 h-4 w-4" />
-              Refresh Profile
-            </Button>
-          </AlertDescription>
-        </Alert>
+        <ProfileErrorAlert 
+          errorMessage="There was a problem loading your user profile."
+          onRefresh={onProfileRefresh}
+          isRefreshing={isRefreshing}
+        />
       )}
       
       {databaseError && (
@@ -48,9 +40,10 @@ const TimeTrackerAlerts = ({
               size="sm" 
               className="w-fit" 
               onClick={onRetryProjects}
+              disabled={isRefreshing}
             >
-              <RefreshCcw className="mr-2 h-4 w-4" />
-              Retry Connection
+              <RefreshCcw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Retrying...' : 'Retry Connection'}
             </Button>
           </AlertDescription>
         </Alert>
