@@ -4,6 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 type TimeEntryStatus = 'draft' | 'submitted' | 'approved' | 'rejected';
 
@@ -33,17 +36,124 @@ const getStatusBadge = (status: TimeEntryStatus) => {
 const RecentTimeEntries = () => {
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { profile } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // In a real application, you would fetch this data from an API
-    // For now, we'll simulate loading and then set empty data
-    const timer = setTimeout(() => {
-      setEntries([]);
-      setIsLoading(false);
-    }, 900);
+    const fetchRecentEntries = async () => {
+      setIsLoading(true);
+      
+      try {
+        if (profile?.id === 'guest') {
+          // For guest user, check localStorage
+          const storedEntries = localStorage.getItem('guestTimeEntries');
+          
+          if (storedEntries) {
+            const parsedEntries = JSON.parse(storedEntries);
+            const storedProjects = localStorage.getItem('guestProjects');
+            const storedTasks = localStorage.getItem('guestTasks');
+            
+            const parsedProjects = storedProjects ? JSON.parse(storedProjects) : [];
+            const parsedTasks = storedTasks ? JSON.parse(storedTasks) : {};
+            
+            // Format and sort by date
+            const formattedEntries = parsedEntries
+              .map((entry: any) => {
+                const project = parsedProjects.find((p: any) => p.id === entry.project_id);
+                const projectTasks = parsedTasks[entry.project_id] || [];
+                const task = projectTasks.find((t: any) => t.id === entry.task_id);
+                
+                // Determine status
+                let status: TimeEntryStatus = 'draft';
+                if (entry.status === 'submitted') {
+                  if (entry.approval_status === 'approved') {
+                    status = 'approved';
+                  } else if (entry.approval_status === 'rejected') {
+                    status = 'rejected';
+                  } else {
+                    status = 'submitted';
+                  }
+                } else {
+                  status = entry.status as TimeEntryStatus;
+                }
+                
+                return {
+                  id: entry.id,
+                  date: entry.date,
+                  project: project?.name || 'Unknown Project',
+                  task: task?.name || 'General Work',
+                  hours: entry.hours,
+                  status,
+                  description: entry.description
+                };
+              })
+              .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+              .slice(0, 5); // Get most recent 5
+              
+            setEntries(formattedEntries);
+          }
+        } else if (profile?.id) {
+          // For authenticated users, fetch from database
+          const { data: entriesData, error: entriesError } = await supabase
+            .from('time_entries')
+            .select(`
+              id,
+              date,
+              hours,
+              description,
+              status,
+              approval_status,
+              projects(name),
+              tasks(name)
+            `)
+            .eq('user_id', profile.id)
+            .order('date', { ascending: false })
+            .limit(5);
+            
+          if (entriesError) {
+            console.error("Error fetching time entries:", entriesError);
+            throw entriesError;
+          }
+          
+          if (entriesData && entriesData.length > 0) {
+            const formattedEntries = entriesData.map(entry => {
+              // Determine display status
+              let displayStatus: TimeEntryStatus = 'draft';
+              if (entry.status === 'submitted') {
+                if (entry.approval_status === 'approved') {
+                  displayStatus = 'approved';
+                } else if (entry.approval_status === 'rejected') {
+                  displayStatus = 'rejected';
+                } else {
+                  displayStatus = 'submitted';
+                }
+              } else {
+                displayStatus = entry.status as TimeEntryStatus;
+              }
+              
+              return {
+                id: entry.id,
+                date: entry.date,
+                project: entry.projects?.name || 'Unknown Project',
+                task: entry.tasks?.name || 'General Work',
+                hours: entry.hours,
+                status: displayStatus,
+                description: entry.description
+              };
+            });
+            
+            setEntries(formattedEntries);
+          }
+        }
+      } catch (error) {
+        console.error("Error in fetchRecentEntries:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    return () => clearTimeout(timer);
-  }, []);
+    fetchRecentEntries();
+  }, [profile]);
 
   // Empty state UI for when there are no time entries
   const renderEmptyState = () => {
@@ -112,7 +222,12 @@ const RecentTimeEntries = () => {
         </div>
       </CardContent>
       <CardFooter className="flex justify-end">
-        <Button variant="outline">View All Entries</Button>
+        <Button 
+          variant="outline"
+          onClick={() => navigate('/time-tracker')}
+        >
+          View All Entries
+        </Button>
       </CardFooter>
     </Card>
   );

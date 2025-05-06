@@ -3,6 +3,9 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface Task {
   id: string;
@@ -29,17 +32,91 @@ const getPriorityColor = (priority: string) => {
 const UpcomingTasks = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { profile } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // In a real application, you would fetch this data from an API
-    // For now, we'll simulate loading and then set empty data
-    const timer = setTimeout(() => {
-      setTasks([]);
-      setIsLoading(false);
-    }, 1200);
+    const fetchTasks = async () => {
+      setIsLoading(true);
+      
+      try {
+        if (profile?.id === 'guest') {
+          // For guest user, check localStorage
+          const storedTasks = localStorage.getItem('guestTasks');
+          const storedProjects = localStorage.getItem('guestProjects');
+          
+          if (storedTasks && storedProjects) {
+            const parsedTasks = JSON.parse(storedTasks);
+            const parsedProjects = JSON.parse(storedProjects);
+            
+            // Flatten tasks from all projects and format them
+            const allTasks: Task[] = [];
+            
+            Object.entries(parsedTasks).forEach(([projectId, projectTasks]: [string, any]) => {
+              const project = parsedProjects.find((p: any) => p.id === projectId);
+              
+              if (project) {
+                projectTasks.forEach((task: any) => {
+                  allTasks.push({
+                    id: task.id,
+                    title: task.name,
+                    project: project.name,
+                    dueDate: new Date(Date.now() + Math.random() * 14 * 24 * 60 * 60 * 1000).toISOString(),
+                    estimatedHours: Math.round(Math.random() * 8 + 1),
+                    priority: ['low', 'medium', 'high'][Math.floor(Math.random() * 3)] as 'low' | 'medium' | 'high'
+                  });
+                });
+              }
+            });
+            
+            // Sort by priority and limit to 3
+            allTasks.sort((a, b) => {
+              const priorityValue = { high: 3, medium: 2, low: 1 };
+              return priorityValue[b.priority] - priorityValue[a.priority];
+            });
+            
+            setTasks(allTasks.slice(0, 3));
+          }
+        } else if (profile?.id) {
+          // For authenticated users, fetch from database
+          const { data: tasksData, error: tasksError } = await supabase
+            .from('tasks')
+            .select(`
+              id, 
+              name,
+              project_id,
+              projects(name)
+            `)
+            .order('created_at', { ascending: false })
+            .limit(3);
+            
+          if (tasksError) {
+            console.error("Error fetching tasks:", tasksError);
+            throw tasksError;
+          }
+          
+          if (tasksData && tasksData.length > 0) {
+            const formattedTasks: Task[] = tasksData.map(task => ({
+              id: task.id,
+              title: task.name,
+              project: task.projects?.name || 'Unknown Project',
+              dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week from now
+              estimatedHours: 4, // Default estimate
+              priority: 'medium' as 'low' | 'medium' | 'high'
+            }));
+            
+            setTasks(formattedTasks);
+          }
+        }
+      } catch (error) {
+        console.error("Error in fetchTasks:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    return () => clearTimeout(timer);
-  }, []);
+    fetchTasks();
+  }, [profile]);
 
   // Empty state UI for when there are no tasks
   const renderEmptyState = () => {
@@ -104,7 +181,12 @@ const UpcomingTasks = () => {
         </div>
       </CardContent>
       <CardFooter className="flex justify-end">
-        <Button variant="outline">View All Tasks</Button>
+        <Button 
+          variant="outline" 
+          onClick={() => navigate('/time-tracker')}
+        >
+          View All Tasks
+        </Button>
       </CardFooter>
     </Card>
   );
