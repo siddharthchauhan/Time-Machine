@@ -18,38 +18,35 @@ const TimeTracker = () => {
     fetchProjects,
     handleProjectCreated,
     handleTaskCreated,
-    handleBatchTasksCreated,
     isReady,
-    profile,
-    isRefreshing
+    profile
   } = useTimeTrackerData();
   
   const { toast } = useToast();
   
   useEffect(() => {
+    // Only fetch projects when profile is ready and loaded
     if (isReady && profile?.id) {
       console.log("Profile is ready, fetching projects");
-      fetchProjects().catch(error => {
-        console.error("Error fetching projects:", error);
-      });
+      fetchProjects();
     } else {
       console.log("Profile not ready yet, waiting...");
     }
   }, [isReady, profile, fetchProjects]);
   
-  useEffect(() => {
-    console.log("TimeTracker rendered with:", { 
-      isReady, 
-      profileId: profile?.id || "none",
-      projects: projects?.length || 0
+  const handleBatchTasksCreated = (count: number) => {
+    toast({
+      title: "Batch Creation Successful",
+      description: `${count} time entries have been created.`,
     });
-  }, [isReady, profile, projects]);
-  
+    // No need to refresh projects or tasks as these are just time entries
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6 md:space-y-8 animate-fade-in">
         <TimeTrackerHeader 
-          projects={projects || []}
+          projects={projects}
           onProjectCreated={handleProjectCreated}
           onTaskCreated={handleTaskCreated}
           onBatchTasksCreated={handleBatchTasksCreated}
@@ -60,17 +57,12 @@ const TimeTracker = () => {
           databaseError={databaseError}
           onProfileRefresh={handleProfileRefresh}
           onRetryProjects={fetchProjects}
-          isRefreshing={isRefreshing}
         />
         
         <TimeTrackerContent
           isLoadingProjects={isLoadingProjects}
-          projects={projects || []}
-          tasks={tasks || {}}
-          profile={profile}
-          isReady={isReady}
-          onProfileRefresh={handleProfileRefresh}
-          isRefreshing={isRefreshing}
+          projects={projects}
+          tasks={tasks}
         />
       </div>
     </MainLayout>

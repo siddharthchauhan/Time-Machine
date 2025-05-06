@@ -1,39 +1,29 @@
 
-import { useEffect } from "react";
-import { useNavigate, useLocation, Route, Routes } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
-import LoginForm from "@/components/auth/LoginForm";
-import SignupForm from "@/components/auth/SignupForm";
-import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 
 export default function Auth() {
-  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  
-  useEffect(() => {
-    if (user && !isLoading) {
-      navigate(location.state?.from?.pathname || '/');
-    }
-  }, [user, isLoading, navigate, location]);
-  
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-muted/40">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
   
   return (
     <div className="flex items-center justify-center min-h-screen bg-muted/40">
       <div className="w-full max-w-md p-4">
         <Card>
-          <CardContent className="pt-6">
-            <Routes>
-              <Route path="/" element={<LoginForm />} />
-              <Route path="/signup" element={<SignupForm />} />
-            </Routes>
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-center">Authentication Disabled</CardTitle>
+            <CardDescription className="text-center">
+              Authentication has been temporarily removed from this application
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center">
+            <p className="text-center mb-4">
+              The application is currently running in development mode with authentication disabled.
+              All protected routes are accessible without login.
+            </p>
+            <Button onClick={() => navigate('/')}>
+              Go to Home Page
+            </Button>
           </CardContent>
         </Card>
       </div>

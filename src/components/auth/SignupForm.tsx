@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,9 +26,10 @@ const formSchema = z.object({
 });
 
 export default function SignupForm() {
-  const { signUp } = useAuth();
+  const { signUp, refreshProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [signupSuccess, setSignupSuccess] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -43,25 +45,25 @@ export default function SignupForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     setAuthError(null);
+    setSignupSuccess(false);
     
     try {
-      const { error } = await signUp(values.email, values.password, {
-        full_name: values.fullName
-      });
+      // With auth disabled, we simulate a successful signup
+      const result = await signUp();
       
-      if (error) {
-        setAuthError(error.message);
-        return;
-      }
+      // Clear the form on success
+      form.reset();
       
+      setSignupSuccess(true);
       toast({
-        title: "Account created",
-        description: "Your account has been successfully created. You can now log in.",
+        title: "Authentication Disabled",
+        description: "Account creation is currently disabled. All routes are accessible without authentication.",
       });
       
-      navigate('/auth');
+      // Navigate to home after a short delay
+      setTimeout(() => navigate('/'), 1500);
     } catch (error: any) {
-      setAuthError(error.message || "An error occurred during signup");
+      setAuthError("Authentication is currently disabled.");
     } finally {
       setIsLoading(false);
     }
@@ -75,6 +77,13 @@ export default function SignupForm() {
       </div>
       
       {authError && <AuthError message={authError} />}
+      
+      {signupSuccess && (
+        <div className="bg-green-100 border border-green-200 text-green-800 rounded-lg p-4 mb-6">
+          <p className="font-medium">Registration successful!</p>
+          <p className="text-sm">You'll be redirected to the main page shortly...</p>
+        </div>
+      )}
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 w-full max-w-md">
